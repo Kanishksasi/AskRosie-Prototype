@@ -7,7 +7,7 @@ import { logIfUnverified } from "../lib/reviewQueue.js";
 import { useEyeTracking } from "../hooks/useEyeTracking.js";
 import { Screen, Header, ArtworkArt, IconButton } from "../components/ui.jsx";
 
-const CONFIDENCE_COLOR = { high: "#2f7a45", medium: "#a3760b", low: "#a33b2b" };
+const CONFIDENCE_COLOR = { high: "#2f7a45", medium: "var(--gg-olive)", low: "#a33b2b" };
 
 export default function Chat() {
   const { id } = useParams();

@@ -18,22 +18,24 @@ export default function App() {
     <AppProvider>
       <ColorVisionFilters />
       <HashRouter>
-        <div style={{ display: "flex", flexDirection: "column", minHeight: "100dvh" }}>
-          <div style={{ flex: 1 }}>
-            <Routes>
-              <Route path="/" element={<Landing />} />
-              <Route path="/onboarding" element={<Onboarding />} />
-              <Route path="/grade" element={<GradeSelect />} />
-              <Route path="/disclaimer" element={<Disclaimer />} />
-              <Route path="/capture" element={<Capture />} />
-              <Route path="/collection" element={<Collection />} />
-              <Route path="/chat/:id" element={<Chat />} />
-              <Route path="/favorites" element={<Favorites />} />
-              <Route path="/settings" element={<Settings />} />
-              <Route path="/staff-review" element={<StaffReview />} />
-            </Routes>
+        <div className="gg-shell">
+          <div className="gg-phone">
+            <div style={{ flex: "1 1 auto", minHeight: 0, display: "flex", flexDirection: "column" }}>
+              <Routes>
+                <Route path="/" element={<Landing />} />
+                <Route path="/onboarding" element={<Onboarding />} />
+                <Route path="/grade" element={<GradeSelect />} />
+                <Route path="/disclaimer" element={<Disclaimer />} />
+                <Route path="/capture" element={<Capture />} />
+                <Route path="/collection" element={<Collection />} />
+                <Route path="/chat/:id" element={<Chat />} />
+                <Route path="/favorites" element={<Favorites />} />
+                <Route path="/settings" element={<Settings />} />
+                <Route path="/staff-review" element={<StaffReview />} />
+              </Routes>
+            </div>
+            <BottomNav />
           </div>
-          <BottomNav />
         </div>
       </HashRouter>
     </AppProvider>

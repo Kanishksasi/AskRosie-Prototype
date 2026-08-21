@@ -1,5 +1,5 @@
 :root {
-  /* Colors sampled from the live askrosie.crystalbridges.org (Aug 2026) */
+  /* Base palette sampled from the live askrosie.crystalbridges.org (Aug 2026) */
   --ar-sage: #cedcc7;
   --ar-sage-dark: #b7c7ae;
   --ar-maroon: #511e11;
@@ -10,6 +10,20 @@
   --ar-mist: #eef2ea;
   --ar-line: rgba(20, 20, 20, 0.12);
   --ar-danger: #c0432b;
+
+  /* Prototype brand palette (from the provided swatch board — hex values are
+     visually estimated from the swatch image, not a source-of-truth spec;
+     swap for exact hex if you have a Figma/brand export). */
+  --gg-ozark: #16302a; /* primary */
+  --gg-olive: #5b5934; /* secondary */
+  --gg-tert-blue: #a9d3da;
+  --gg-tert-teal: #4c8c93;
+  --gg-tert-teal-deep: #2c4a52;
+  --gg-tert-lavender: #d9c2da;
+  --gg-tert-purple: #7b4b8a;
+  --gg-tert-gold: #d4a24c;
+  --gg-tert-orange: #c56a2e;
+  --gg-backdrop: var(--gg-ozark);
 
   --ar-font: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
 
@@ -62,4 +76,41 @@ button {
 
 a {
   color: inherit;
+}
+
+/* Phone-frame shell: full-bleed on real phones, a centered mobile-width
+   card floating on a colored backdrop once the viewport is wide enough
+   that a full-width layout would stop reading as a mobile app. */
+.gg-shell {
+  min-height: 100dvh;
+  display: flex;
+  justify-content: center;
+  background: var(--ar-cream);
+}
+
+.gg-phone {
+  width: 100%;
+  min-height: 100dvh;
+  background: var(--ar-cream);
+  display: flex;
+  flex-direction: column;
+}
+
+@media (min-width: 700px) {
+  .gg-shell {
+    background: var(--gg-backdrop);
+    padding: 40px 16px;
+    align-items: center;
+  }
+
+  .gg-phone {
+    max-width: 430px;
+    min-height: min(860px, calc(100dvh - 80px));
+    max-height: calc(100dvh - 80px);
+    border-radius: 36px;
+    box-shadow: 0 30px 70px rgba(0, 0, 0, 0.35);
+    border: 6px solid #0b1815;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
 }

@@ -5,7 +5,8 @@ export function Screen({ children, bg = "cream", center = false }) {
   return (
     <div
       style={{
-        minHeight: "100dvh",
+        flex: "1 1 auto",
+        minHeight: 0,
         display: "flex",
         flexDirection: "column",
         background: bg === "sage" ? "var(--ar-sage)" : "var(--ar-cream)",
