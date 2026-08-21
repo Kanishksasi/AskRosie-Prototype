@@ -3,10 +3,15 @@ import { useApp } from "../context/AppContext.jsx";
 
 const HIDDEN_ON = ["/", "/onboarding", "/grade", "/disclaimer"];
 
+export function useShowBottomNav() {
+  const location = useLocation();
+  return !HIDDEN_ON.includes(location.pathname);
+}
+
 export default function BottomNav() {
   const { t } = useApp();
-  const location = useLocation();
-  if (HIDDEN_ON.includes(location.pathname)) return null;
+  const show = useShowBottomNav();
+  if (!show) return null;
 
   const items = [
     { to: "/capture", label: t("home"), icon: "🏠" },
@@ -17,14 +22,19 @@ export default function BottomNav() {
 
   return (
     <nav
+      className="gg-bottomnav"
       style={{
-        position: "sticky",
+        left: 0,
+        right: 0,
         bottom: 0,
+        minHeight: "var(--gg-navh)",
         display: "flex",
         justifyContent: "space-around",
+        alignItems: "center",
         background: "#fff",
         borderTop: "1px solid var(--ar-line)",
         padding: "8px 4px calc(8px + env(safe-area-inset-bottom))",
+        zIndex: 20,
       }}
     >
       {items.map((item) => (

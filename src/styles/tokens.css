@@ -34,6 +34,7 @@
 
   --ar-shadow-card: 0 8px 24px rgba(20, 20, 20, 0.08);
   --ar-font-scale: 1;
+  --gg-navh: 68px;
 }
 
 /* Accessibility: color-vision filters applied to <html> */
@@ -94,6 +95,23 @@ a {
   background: var(--ar-cream);
   display: flex;
   flex-direction: column;
+  position: relative;
+}
+
+/* The bottom tab bar (see BottomNav) is NOT `position: sticky` — sticky
+   inside a flex column that's taller than the viewport just floats in
+   normal flow instead of pinning to the screen edge. It needs a reserved
+   gap at the end of scrollable content so the last card isn't hidden
+   underneath it. */
+.gg-content-area {
+  padding-bottom: calc(var(--gg-navh) + env(safe-area-inset-bottom));
+}
+
+/* Mobile (real phone, or a narrow window): .gg-phone IS the viewport, so
+   `fixed` pins the nav to the true screen bottom while the document
+   scrolls underneath it. */
+.gg-bottomnav {
+  position: fixed;
 }
 
 @media (min-width: 700px) {
@@ -110,7 +128,25 @@ a {
     border-radius: 36px;
     box-shadow: 0 30px 70px rgba(0, 0, 0, 0.35);
     border: 6px solid #0b1815;
+    /* .gg-phone itself does NOT scroll — it only clips to the rounded
+       frame. Scrolling happens one level down, on .gg-scroll-area. An
+       element with `position: absolute`/`fixed` that's a DIRECT CHILD of
+       the box that scrolls gets carried along with that scroll no matter
+       what (confirmed by measuring getBoundingClientRect before/after
+       setting scrollTop — it moved in lockstep). The bottom nav has to be
+       a sibling of the scrolling box, not a descendant of it, to stay put
+       while the content scrolls underneath. */
+    overflow: hidden;
+  }
+
+  .gg-scroll-area {
     overflow-y: auto;
-    overflow-x: hidden;
+  }
+
+  /* Now that .gg-phone no longer scrolls, `absolute` relative to its
+     `position: relative` reliably stays glued to the frame's visible
+     bottom edge regardless of how far .gg-scroll-area is scrolled. */
+  .gg-bottomnav {
+    position: absolute;
   }
 }

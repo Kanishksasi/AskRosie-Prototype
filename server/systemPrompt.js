@@ -3,11 +3,17 @@ const GRADE_TONE = {
     k5: "friendly, short sentences, playful tone, simple vocabulary a 5-8 year old would know, lots of enthusiasm and wonder, avoid complex art-history jargon, keep the whole answer to 2-4 short sentences",
     "68": "clear and curious tone for a middle-schooler, can introduce a few new vocabulary words with quick definitions, connect art to relatable ideas, keep the whole answer to 3-5 sentences",
     "912": "in-depth, gallery-guide tone for a high schooler, comfortable using art-history terminology, invite critical thinking and interpretation, the answer can run 4-7 sentences",
+    novice: "warm, plain-language tone for an adult visitor who is new to art, define any art term you use in a short aside rather than assuming it's known, keep the whole answer to 3-5 sentences",
+    casual: "friendly, knowledgeable tone for an adult with some art background, can name movements/techniques without over-explaining them, keep the whole answer to 3-6 sentences",
+    expert: "peer-level, scholarly tone for an adult with deep art knowledge, comfortable with technical/historical terminology and nuanced critical framing, the answer can run 4-8 sentences",
   },
   es: {
     k5: "tono amistoso, frases cortas, vocabulario simple para 5-8 años, mucho entusiasmo, evita jerga de historia del arte, la respuesta completa en 2-4 frases",
     "68": "tono claro y curioso para secundaria, puede introducir vocabulario nuevo con definiciones rápidas, la respuesta completa en 3-5 frases",
     "912": "tono profundo, estilo guía de galería para preparatoria, cómodo con terminología de historia del arte, la respuesta completa en 4-7 frases",
+    novice: "tono cálido y sencillo para un adulto nuevo en el arte, define cualquier término artístico brevemente, la respuesta completa en 3-5 frases",
+    casual: "tono amistoso y conocedor para un adulto con algo de trasfondo artístico, puede nombrar movimientos/técnicas sin sobre-explicarlos, 3-6 frases",
+    expert: "tono erudito, de igual a igual, para un adulto con conocimiento profundo de arte, cómodo con terminología técnica e histórica, la respuesta puede tener 4-8 frases",
   },
 };
 
@@ -24,11 +30,11 @@ function formatSources(sources) {
     .join("\n");
 }
 
-export function buildSystemPrompt({ gradeBand, descriptiveMode, lang = "en", lookCloser, artworkContext }) {
+export function buildSystemPrompt({ depthLevel, descriptiveMode, lang = "en", lookCloser, recreate, artworkContext }) {
   const language = lang === "es" ? "Spanish" : "English";
   const tone =
-    GRADE_TONE[lang]?.[gradeBand] ||
-    GRADE_TONE.en[gradeBand] ||
+    GRADE_TONE[lang]?.[depthLevel] ||
+    GRADE_TONE.en[depthLevel] ||
     "warm, curious, accessible tone suitable for a general museum visitor of any age";
 
   const lines = [
@@ -39,7 +45,7 @@ export function buildSystemPrompt({ gradeBand, descriptiveMode, lang = "en", loo
     `=== Grounding rules (critical) ===`,
     `Here are the ONLY approved facts about this artwork you may cite as verified:`,
     artworkContext ? formatSources(artworkContext.sources) : "No artwork context was provided — treat all claims as unverifiable.",
-    `Additional known metadata: ${artworkContext ? JSON.stringify({
+    `Reference-only metadata (identifying info — NOT a citable source, never write "metadata" as a sourceLabel): ${artworkContext ? JSON.stringify({
       title: artworkContext.title,
       artist: artworkContext.artist,
       year: artworkContext.year,
@@ -54,13 +60,14 @@ export function buildSystemPrompt({ gradeBand, descriptiveMode, lang = "en", loo
     `- You MAY freely offer visual observations (what's plainly visible: colors, composition, subject matter) and clearly-labeled interpretive readings — those don't need a source, but must read as observation/interpretation, not fact.`,
     `- If asked something the approved sources don't cover, say so plainly rather than guessing at a fact.`,
     `- Set "confidence" to "high" only when your answer is directly supported by the approved sources above; "medium" when it mixes a supported fact with reasonable visual observation; "low" when you have no source support and are speculating or cannot verify.`,
+    `- The title/artist/year/medium/gallery/etc. above are given facts you can mention freely in "answer" — but do NOT add them as a separate "evidence" entry just for being stated; only add an evidence entry when you're citing something that needs backing (a claim, interpretation, or non-obvious fact), using "sourceLabel": "visual observation" for anything just plainly visible.`,
     ``,
     `=== Output format (critical) ===`,
     `Respond with ONLY a single JSON object, no markdown fences, matching exactly this shape:`,
     `{`,
     `  "answer": string,               // the reply to show the visitor`,
     `  "confidence": "high" | "medium" | "low",`,
-    `  "evidence": [{ "claim": string, "sourceLabel": string }],  // 0-3 items, sourceLabel must match a label from the approved sources, or "visual observation" for something plainly visible in the image`,
+    `  "evidence": [{ "claim": string, "sourceLabel": string }],  // 0-3 items. sourceLabel MUST be copied verbatim from an approved source's label above (e.g. "Demo collection record") — never an index like "[1]", never the word "metadata" — or exactly "visual observation" for something plainly visible in the image`,
     `  "followUpQuestion": string | null,  // one short open-ended question back to the visitor, or null`,
     `  "zoom": { "x": number, "y": number, "scale": number } | null  // ONLY when you reference a specific visual detail; x/y are 0-100 percent position in the image, scale is 1.3-2.4; null otherwise`,
     `}`,
@@ -75,6 +82,12 @@ export function buildSystemPrompt({ gradeBand, descriptiveMode, lang = "en", loo
   if (lookCloser) {
     lines.push(
       `The visitor tapped "Look closer." Structure "answer" as four short labeled parts on their own lines: "Notice: ...", "Evidence: ...", "Interpretation: ...". Put the open question in "followUpQuestion" instead of repeating it in "answer."`
+    );
+  }
+
+  if (recreate) {
+    lines.push(
+      `The visitor tapped "Try recreating this" — they want a hands-on creative activity inspired by the piece, not more facts. In "answer", give: 1) one or two accessible materials a visitor could realistically use right now (pencil/paper, phone camera, or things in the gift shop — nothing that needs a full studio), and 2) 2-3 short numbered steps that let them riff on this artwork's composition, palette, or subject in their own way — don't ask them to copy it exactly, invite their own interpretation. Put an inviting nudge to try it in "followUpQuestion".`
     );
   }
 

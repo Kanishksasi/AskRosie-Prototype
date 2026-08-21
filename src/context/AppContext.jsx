@@ -17,7 +17,7 @@ function loadPrefs() {
 
 const DEFAULT_PREFS = {
   lang: "en",
-  gradeBand: null, // "k5" | "68" | "912" | null
+  depthLevel: null, // "k5" | "68" | "912" | null
   colorblindMode: "none", // none | protanopia | deuteranopia | tritanopia
   descriptiveMode: false,
   readAloud: false,

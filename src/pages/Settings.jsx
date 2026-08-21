@@ -10,6 +10,9 @@ const GRADE_OPTIONS = [
   { id: "k5", labelKey: "gradeK5" },
   { id: "68", labelKey: "grade68" },
   { id: "912", labelKey: "grade912" },
+  { id: "novice", labelKey: "levelNovice" },
+  { id: "casual", labelKey: "levelCasual" },
+  { id: "expert", labelKey: "levelExpert" },
 ];
 
 const CB_OPTIONS = [
@@ -33,7 +36,7 @@ export default function Settings() {
         <Field label={t("settingsGrade")}>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             {GRADE_OPTIONS.map((g) => (
-              <Chip key={String(g.id)} active={prefs.gradeBand === g.id} onClick={() => update({ gradeBand: g.id })}>
+              <Chip key={String(g.id)} active={prefs.depthLevel === g.id} onClick={() => update({ depthLevel: g.id })}>
                 {t(g.labelKey)}
               </Chip>
             ))}

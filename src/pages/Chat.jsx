@@ -64,7 +64,7 @@ export default function Chat() {
     window.speechSynthesis.speak(utter);
   }, [messages, prefs.readAloud, prefs.lang]);
 
-  async function sendTurn({ userText, kickoff = false, lookCloser = false }) {
+  async function sendTurn({ userText, kickoff = false, lookCloser = false, recreate = false }) {
     setLoading(true);
     setError(null);
 
@@ -82,15 +82,18 @@ export default function Chat() {
         prompt = `The visitor just opened this artwork: ${subjectLine}. Greet them warmly in one or two short beats and invite them to ask something, then offer one interesting opening observation about the piece.`;
       } else if (lookCloser) {
         prompt = "Look closer with me at this piece.";
+      } else if (recreate) {
+        prompt = "I want to try recreating or riffing on this piece myself.";
       }
 
       const reply = await askSage({
         messages: [...history, { role: "user", content: prompt }],
         image: isCustom ? capturedImage : null,
-        gradeBand: prefs.gradeBand,
+        depthLevel: prefs.depthLevel,
         descriptiveMode: prefs.descriptiveMode,
         lang: prefs.lang,
         lookCloser,
+        recreate,
         artworkContext: artwork || null,
       });
 
@@ -99,10 +102,11 @@ export default function Chat() {
         setTimeout(() => setZoom(null), 4200);
       }
 
-      setMessages((prev) => [...prev, { role: "assistant", data: reply, lookCloser, hidden: false }]);
+      const mode = lookCloser ? "lookCloser" : recreate ? "recreate" : null;
+      setMessages((prev) => [...prev, { role: "assistant", data: reply, mode, hidden: false }]);
 
       logIfUnverified({
-        question: userText || (lookCloser ? "[Look closer]" : "[opening greeting]"),
+        question: userText || (kickoff ? "[opening greeting]" : `[${mode}]`),
         artworkTitle: artwork?.title,
         confidence: reply.confidence,
         lang: prefs.lang,
@@ -194,7 +198,7 @@ export default function Chat() {
               m.role === "user" ? (
                 <ChatBubble key={i} text={m.text} />
               ) : (
-                <AssistantTurn key={i} data={m.data} lookCloser={m.lookCloser} t={t} />
+                <AssistantTurn key={i} data={m.data} mode={m.mode} t={t} />
               )
             )}
           {loading && <ChatBubble text={t("thinking")} muted />}
@@ -202,7 +206,7 @@ export default function Chat() {
           <div ref={bottomRef} />
         </div>
 
-        <div style={{ display: "flex", justifyContent: "center", marginBottom: 8 }}>
+        <div style={{ display: "flex", justifyContent: "center", gap: 8, marginBottom: 8, flexWrap: "wrap" }}>
           <button
             onClick={() => void sendTurn({ lookCloser: true })}
             disabled={loading}
@@ -218,6 +222,22 @@ export default function Chat() {
             }}
           >
             🔍 {t("lookCloser")}
+          </button>
+          <button
+            onClick={() => void sendTurn({ recreate: true })}
+            disabled={loading}
+            title={t("recreateHint")}
+            style={{
+              fontSize: 12,
+              padding: "6px 14px",
+              borderRadius: 999,
+              border: "1px solid var(--gg-tert-gold)",
+              background: "#fff",
+              color: "#8a6218",
+              cursor: loading ? "not-allowed" : "pointer",
+            }}
+          >
+            🎨 {t("recreate")}
           </button>
         </div>
 
@@ -276,7 +296,10 @@ function ChatBubble({ text, muted }) {
   );
 }
 
-function AssistantTurn({ data, lookCloser, t }) {
+const MODE_ACCENT = { lookCloser: "var(--ar-teal)", recreate: "var(--gg-tert-gold)" };
+
+function AssistantTurn({ data, mode, t }) {
+  const accent = MODE_ACCENT[mode];
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 6, alignItems: "flex-start" }}>
       <div
@@ -286,8 +309,8 @@ function AssistantTurn({ data, lookCloser, t }) {
           borderRadius: 16,
           fontSize: 14,
           lineHeight: 1.55,
-          background: lookCloser ? "#fff" : "var(--ar-mist)",
-          border: lookCloser ? "1px solid var(--ar-teal)" : "none",
+          background: accent ? "#fff" : "var(--ar-mist)",
+          border: accent ? `1px solid ${accent}` : "none",
           color: "var(--ar-ink)",
           whiteSpace: "pre-line",
         }}

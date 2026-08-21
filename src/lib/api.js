@@ -4,11 +4,11 @@
 // Returns the grounded-answer contract: { answer, confidence, evidence,
 // followUpQuestion, zoom }. See server/systemPrompt.js for the schema Sage
 // is instructed to return.
-export async function askSage({ messages, image, gradeBand, descriptiveMode, lang, lookCloser, artworkContext }) {
+export async function askSage({ messages, image, depthLevel, descriptiveMode, lang, lookCloser, recreate, artworkContext }) {
   const res = await fetch("/api/chat", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ messages, image, gradeBand, descriptiveMode, lang, lookCloser, artworkContext }),
+    body: JSON.stringify({ messages, image, depthLevel, descriptiveMode, lang, lookCloser, recreate, artworkContext }),
   });
 
   if (!res.ok) {
