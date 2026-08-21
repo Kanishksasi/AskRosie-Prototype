@@ -1,0 +1,65 @@
+:root {
+  /* Colors sampled from the live askrosie.crystalbridges.org (Aug 2026) */
+  --ar-sage: #cedcc7;
+  --ar-sage-dark: #b7c7ae;
+  --ar-maroon: #511e11;
+  --ar-maroon-deep: #3b160c;
+  --ar-teal: #05515f;
+  --ar-ink: #141414;
+  --ar-cream: #ffffff;
+  --ar-mist: #eef2ea;
+  --ar-line: rgba(20, 20, 20, 0.12);
+  --ar-danger: #c0432b;
+
+  --ar-font: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  --ar-radius-full: 999px;
+  --ar-radius-lg: 20px;
+  --ar-radius-md: 14px;
+  --ar-radius-sm: 8px;
+
+  --ar-shadow-card: 0 8px 24px rgba(20, 20, 20, 0.08);
+  --ar-font-scale: 1;
+}
+
+/* Accessibility: color-vision filters applied to <html> */
+html.ar-cb-protanopia {
+  filter: url(#ar-protanopia);
+}
+html.ar-cb-deuteranopia {
+  filter: url(#ar-deuteranopia);
+}
+html.ar-cb-tritanopia {
+  filter: url(#ar-tritanopia);
+}
+html.ar-high-contrast {
+  --ar-sage: #e9efe4;
+  --ar-line: rgba(20, 20, 20, 0.35);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--ar-font);
+  background: var(--ar-cream);
+  color: var(--ar-ink);
+  font-size: calc(16px * var(--ar-font-scale));
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  font-family: inherit;
+}
+
+a {
+  color: inherit;
+}

@@ -1,0 +1,170 @@
+import { useState } from "react";
+import { Link } from "react-router-dom";
+import { useApp } from "../context/AppContext.jsx";
+import { Screen, Header } from "../components/ui.jsx";
+import { useEyeTracking } from "../hooks/useEyeTracking.js";
+import EyeCalibration from "../components/EyeCalibration.jsx";
+
+const GRADE_OPTIONS = [
+  { id: null, labelKey: "gradeSkip" },
+  { id: "k5", labelKey: "gradeK5" },
+  { id: "68", labelKey: "grade68" },
+  { id: "912", labelKey: "grade912" },
+];
+
+const CB_OPTIONS = [
+  { id: "none", labelKey: "cbNone" },
+  { id: "protanopia", labelKey: "cbProtanopia" },
+  { id: "deuteranopia", labelKey: "cbDeuteranopia" },
+  { id: "tritanopia", labelKey: "cbTritanopia" },
+];
+
+export default function Settings() {
+  const { t, prefs, update } = useApp();
+  const [calibrating, setCalibrating] = useState(false);
+  const { status: eyeStatus, calibrate } = useEyeTracking(prefs.eyeTracking);
+
+  return (
+    <Screen>
+      <Header dark />
+      <div style={{ padding: "0 24px 60px", maxWidth: 560, margin: "0 auto", width: "100%", display: "flex", flexDirection: "column", gap: 28 }}>
+        <h1 style={{ fontSize: 22, color: "var(--ar-teal)", margin: "8px 0 0" }}>{t("settingsTitle")}</h1>
+
+        <Field label={t("settingsGrade")}>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            {GRADE_OPTIONS.map((g) => (
+              <Chip key={String(g.id)} active={prefs.gradeBand === g.id} onClick={() => update({ gradeBand: g.id })}>
+                {t(g.labelKey)}
+              </Chip>
+            ))}
+          </div>
+        </Field>
+
+        <Field label={t("settingsColorblind")}>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            {CB_OPTIONS.map((c) => (
+              <Chip key={c.id} active={prefs.colorblindMode === c.id} onClick={() => update({ colorblindMode: c.id })}>
+                {t(c.labelKey)}
+              </Chip>
+            ))}
+          </div>
+        </Field>
+
+        <Field label={t("settingsDescriptive")} help={t("settingsDescriptiveHelp")}>
+          <Toggle checked={prefs.descriptiveMode} onChange={(v) => update({ descriptiveMode: v })} />
+        </Field>
+
+        <Field label={t("settingsReadAloud")}>
+          <Toggle checked={prefs.readAloud} onChange={(v) => update({ readAloud: v })} />
+        </Field>
+
+        <Field label={t("settingsHighContrast")}>
+          <Toggle checked={prefs.highContrast} onChange={(v) => update({ highContrast: v })} />
+        </Field>
+
+        <Field label={t("settingsTextSize")}>
+          <input
+            type="range"
+            min="0.9"
+            max="1.6"
+            step="0.1"
+            value={prefs.fontScale}
+            onChange={(e) => update({ fontScale: Number(e.target.value) })}
+            style={{ width: "100%" }}
+          />
+        </Field>
+
+        <Field label={t("settingsEyeTracking")} help={t("settingsEyeTrackingHelp")}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <Toggle checked={prefs.eyeTracking} onChange={(v) => update({ eyeTracking: v })} />
+            {prefs.eyeTracking && (
+              <button
+                onClick={() => setCalibrating(true)}
+                disabled={eyeStatus !== "ready"}
+                style={{
+                  padding: "6px 14px",
+                  borderRadius: 999,
+                  border: "1px solid var(--ar-line)",
+                  background: "#fff",
+                  fontSize: 12,
+                  cursor: eyeStatus === "ready" ? "pointer" : "not-allowed",
+                }}
+              >
+                {t("calibrate")} {eyeStatus !== "ready" && `(${eyeStatus})`}
+              </button>
+            )}
+          </div>
+        </Field>
+
+        <Link to="/staff-review" style={{ fontSize: 12, color: "#888", textDecoration: "underline" }}>
+          {t("staffNavLabel")}
+        </Link>
+      </div>
+
+      {calibrating && (
+        <EyeCalibration onPoint={(p) => calibrate([p])} onDone={() => setCalibrating(false)} />
+      )}
+    </Screen>
+  );
+}
+
+function Field({ label, help, children }) {
+  return (
+    <div>
+      <div style={{ fontSize: 14, fontWeight: 600, marginBottom: help ? 4 : 8 }}>{label}</div>
+      {help && <p style={{ fontSize: 12, color: "#777", margin: "0 0 8px" }}>{help}</p>}
+      {children}
+    </div>
+  );
+}
+
+function Chip({ active, onClick, children }) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        padding: "8px 14px",
+        borderRadius: 999,
+        border: active ? "2px solid var(--ar-maroon)" : "1px solid var(--ar-line)",
+        background: active ? "var(--ar-maroon)" : "#fff",
+        color: active ? "#fff" : "var(--ar-ink)",
+        fontSize: 13,
+        cursor: "pointer",
+      }}
+    >
+      {children}
+    </button>
+  );
+}
+
+function Toggle({ checked, onChange }) {
+  return (
+    <button
+      role="switch"
+      aria-checked={checked}
+      onClick={() => onChange(!checked)}
+      style={{
+        width: 48,
+        height: 28,
+        borderRadius: 999,
+        border: "none",
+        background: checked ? "var(--ar-maroon)" : "#ccc",
+        position: "relative",
+        cursor: "pointer",
+      }}
+    >
+      <span
+        style={{
+          position: "absolute",
+          top: 3,
+          left: checked ? 23 : 3,
+          width: 22,
+          height: 22,
+          borderRadius: "50%",
+          background: "#fff",
+          transition: "left 140ms ease",
+        }}
+      />
+    </button>
+  );
+}
