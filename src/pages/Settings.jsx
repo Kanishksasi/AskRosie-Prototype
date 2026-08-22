@@ -65,16 +65,40 @@ export default function Settings() {
           <Toggle checked={prefs.highContrast} onChange={(v) => update({ highContrast: v })} />
         </Field>
 
+        <Field label={t("settingsColorIntensity")} help={t("settingsColorIntensityHelp")}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <input
+              type="range"
+              min="0"
+              max="2"
+              step="0.1"
+              value={prefs.colorIntensity}
+              onChange={(e) => update({ colorIntensity: Number(e.target.value) })}
+              style={{ flex: 1 }}
+              aria-label={t("settingsColorIntensity")}
+            />
+            <span style={{ fontSize: 12, color: "#666", width: 40, textAlign: "right" }}>
+              {Math.round(prefs.colorIntensity * 100)}%
+            </span>
+          </div>
+        </Field>
+
         <Field label={t("settingsTextSize")}>
-          <input
-            type="range"
-            min="0.9"
-            max="1.6"
-            step="0.1"
-            value={prefs.fontScale}
-            onChange={(e) => update({ fontScale: Number(e.target.value) })}
-            style={{ width: "100%" }}
-          />
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <input
+              type="range"
+              min="0.9"
+              max="1.6"
+              step="0.1"
+              value={prefs.fontScale}
+              onChange={(e) => update({ fontScale: Number(e.target.value) })}
+              style={{ flex: 1 }}
+              aria-label={t("settingsTextSize")}
+            />
+            <span style={{ fontSize: 12, color: "#666", width: 40, textAlign: "right" }}>
+              {Math.round(prefs.fontScale * 100)}%
+            </span>
+          </div>
         </Field>
 
         <Field label={t("settingsEyeTracking")} help={t("settingsEyeTrackingHelp")}>

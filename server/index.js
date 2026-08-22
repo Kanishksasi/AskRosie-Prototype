@@ -148,7 +148,7 @@ app.get("/api/health", (_req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`Gallery Guide API proxy listening on http://localhost:${PORT}`);
+  console.log(`Ask Rosie API proxy listening on http://localhost:${PORT}`);
   if (!GROQ_API_KEY) {
     console.warn("⚠️  GROQ_API_KEY is not set — add it to server/.env to enable chat.");
   }

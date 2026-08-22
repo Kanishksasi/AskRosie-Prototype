@@ -39,7 +39,7 @@ export default function Capture() {
   }, []);
 
   function goToCustomCapture(dataUrl) {
-    sessionStorage.setItem("galleryguide:capturedImage", dataUrl);
+    sessionStorage.setItem("askrosie:capturedImage", dataUrl);
     navigate("/chat/custom-capture");
   }
 

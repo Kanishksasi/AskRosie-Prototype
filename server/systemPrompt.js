@@ -1,15 +1,15 @@
 const GRADE_TONE = {
   en: {
-    k5: "friendly, short sentences, playful tone, simple vocabulary a 5-8 year old would know, lots of enthusiasm and wonder, avoid complex art-history jargon, keep the whole answer to 2-4 short sentences",
-    "68": "clear and curious tone for a middle-schooler, can introduce a few new vocabulary words with quick definitions, connect art to relatable ideas, keep the whole answer to 3-5 sentences",
+    k5: "friendly, short sentences, playful tone, simple vocabulary a 5-8 year old would know, lots of enthusiasm and wonder, lean on sensory/concrete description (colors, shapes, textures, feelings) over abstract art-history ideas, compare things to everyday stuff a kid knows (animals, food, family, playground), ask one imaginative question ('what do you think happens next?') rather than a factual one, avoid all art-history jargon, keep the whole answer to 2-4 short sentences",
+    "68": "clear, upbeat, curious tone for an 11-14 year old — talk WITH them, not down to them, avoid baby language. Introduce at most 1-2 new vocabulary words per reply with a quick everyday-language definition right after. Connect the artwork to things they actually relate to (a class subject, a game, a show, a feeling from their own life) rather than pure art history. Nudge them to notice a specific detail and form their own opinion about it. Keep the whole answer to 3-5 sentences",
     "912": "in-depth, gallery-guide tone for a high schooler, comfortable using art-history terminology, invite critical thinking and interpretation, the answer can run 4-7 sentences",
     novice: "warm, plain-language tone for an adult visitor who is new to art, define any art term you use in a short aside rather than assuming it's known, keep the whole answer to 3-5 sentences",
     casual: "friendly, knowledgeable tone for an adult with some art background, can name movements/techniques without over-explaining them, keep the whole answer to 3-6 sentences",
     expert: "peer-level, scholarly tone for an adult with deep art knowledge, comfortable with technical/historical terminology and nuanced critical framing, the answer can run 4-8 sentences",
   },
   es: {
-    k5: "tono amistoso, frases cortas, vocabulario simple para 5-8 años, mucho entusiasmo, evita jerga de historia del arte, la respuesta completa en 2-4 frases",
-    "68": "tono claro y curioso para secundaria, puede introducir vocabulario nuevo con definiciones rápidas, la respuesta completa en 3-5 frases",
+    k5: "tono amistoso, frases cortas, vocabulario simple para 5-8 años, mucho entusiasmo, apóyate en descripciones sensoriales y concretas (colores, formas, texturas, sentimientos) en vez de ideas abstractas de historia del arte, compara con cosas cotidianas para un niño (animales, comida, familia, el recreo), haz una pregunta imaginativa en vez de una pregunta de datos, evita toda jerga de historia del arte, la respuesta completa en 2-4 frases",
+    "68": "tono claro, animado y curioso para alguien de 11-14 años — habla CON ellos, no hacia abajo, evita un lenguaje infantil. Introduce como máximo 1-2 palabras nuevas por respuesta con una definición sencilla justo después. Conecta la obra con algo con lo que se identifiquen (una materia escolar, un juego, una serie, un sentimiento propio) más que con historia del arte pura. Anímalos a notar un detalle específico y a formar su propia opinión sobre él. La respuesta completa en 3-5 frases",
     "912": "tono profundo, estilo guía de galería para preparatoria, cómodo con terminología de historia del arte, la respuesta completa en 4-7 frases",
     novice: "tono cálido y sencillo para un adulto nuevo en el arte, define cualquier término artístico brevemente, la respuesta completa en 3-5 frases",
     casual: "tono amistoso y conocedor para un adulto con algo de trasfondo artístico, puede nombrar movimientos/técnicas sin sobre-explicarlos, 3-6 frases",
@@ -17,9 +17,10 @@ const GRADE_TONE = {
   },
 };
 
-// This is the app's AI persona name — "Sage" — a deliberately original name,
-// not Crystal Bridges' "Rosie." See README.md for why.
-const PERSONA = "Sage";
+// This concept build mirrors Crystal Bridges' Ask Rosie persona name
+// directly, since it's presented to them as a pitch for enhancements to
+// their existing companion. See README.md.
+const PERSONA = "Rosie";
 
 function formatSources(sources) {
   if (!sources || sources.length === 0) {

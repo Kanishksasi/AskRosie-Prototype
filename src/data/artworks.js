@@ -8,6 +8,12 @@
 // `sources` follows the citation-first contract: the chat backend is told
 // these are the ONLY facts it may cite as verified for a given piece —
 // everything else has to be flagged as interpretation or "can't verify."
+//
+// `image`/`imageCredit`: since the artworks above are fictional demo
+// entries, each is paired with a real, thematically-matching public-domain
+// image (via the Art Institute of Chicago's open API, CC0-licensed) as a
+// visual stand-in — not a claim that this IS that painting. imageCredit
+// names the real work so that's never ambiguous.
 
 export const ARTWORKS = [
   {
@@ -18,6 +24,8 @@ export const ARTWORKS = [
     decade: "1930s",
     medium: "Oil on canvas",
     palette: ["#e8b04b", "#7c9a53", "#f4e3c1"],
+    image: "/artworks/sunlit-orchard.jpg",
+    imageCredit: "Stand-in image: Claude Monet, \"Stack of Wheat (Thaw, Sunset),\" 1890–91 — Art Institute of Chicago, public domain",
     blurb: "A golden-hour orchard scene with long, warm shadows.",
     themes: ["landscape", "rural life", "light"],
     onView: true,
@@ -40,6 +48,8 @@ export const ARTWORKS = [
     decade: "1960s",
     medium: "Welded steel sculpture",
     palette: ["#6b7280", "#1f2937", "#9ca3af"],
+    image: "/artworks/steel-horizon.jpg",
+    imageCredit: "Stand-in image: Vasily Kandinsky, \"Landscape with Two Poplars,\" 1912 — Art Institute of Chicago, public domain",
     blurb: "An abstract sculpture of interlocking steel arcs.",
     themes: ["abstraction", "industrial material", "scale"],
     onView: true,
@@ -62,6 +72,8 @@ export const ARTWORKS = [
     decade: "1900s",
     medium: "Oil on canvas",
     palette: ["#7a3b2e", "#c9a86a", "#2f4858"],
+    image: "/artworks/river-portrait.jpg",
+    imageCredit: "Stand-in image: Édouard Manet, \"Woman Reading,\" 1880–82 — Art Institute of Chicago, public domain",
     blurb: "A quiet riverside portrait in a muted, earthy palette.",
     themes: ["portraiture", "everyday life"],
     onView: false,
@@ -106,6 +118,8 @@ export const ARTWORKS = [
     decade: "2000s",
     medium: "Blown glass installation",
     palette: ["#2f6690", "#a3d5ff", "#e8f6ff"],
+    image: "/artworks/glass-tide.jpg",
+    imageCredit: "Stand-in image: Mount Washington Glass Company, \"Royal Flemish Vase,\" 1889–95 — Art Institute of Chicago, public domain",
     blurb: "Suspended glass forms that catch light like ocean spray.",
     themes: ["installation", "nature", "light"],
     onView: true,
@@ -128,6 +142,8 @@ export const ARTWORKS = [
     decade: "1940s",
     medium: "Watercolor on paper",
     palette: ["#e8b04b", "#c0432b", "#511e11"],
+    image: "/artworks/market-day.jpg",
+    imageCredit: "Stand-in image: Constant Troyon, \"The Road to Market,\" 1858–59 — Art Institute of Chicago, public domain",
     blurb: "A bustling watercolor sketch of a small-town market square.",
     themes: ["everyday life", "community"],
     onView: true,
@@ -150,6 +166,8 @@ export const ARTWORKS = [
     decade: "1950s",
     medium: "Cast bronze sculpture",
     palette: ["#8a5a2b", "#3b160c", "#c9a86a"],
+    image: "/artworks/bronze-stride.jpg",
+    imageCredit: "Stand-in image: attributed to Pietro Tacca, \"Hercules and Antaeus,\" 1600–1625 — Art Institute of Chicago, public domain",
     blurb: "A mid-stride figure cast in weathered bronze.",
     themes: ["figure", "movement"],
     onView: true,
@@ -194,11 +212,4 @@ export function fetchArtworks() {
 
 export function getArtwork(id) {
   return ARTWORKS.find((a) => a.id === id) ?? null;
-}
-
-export function getFilterOptions() {
-  const artists = [...new Set(ARTWORKS.map((a) => a.artist))].sort();
-  const decades = [...new Set(ARTWORKS.map((a) => a.decade))].sort();
-  const mediums = [...new Set(ARTWORKS.map((a) => a.medium))].sort();
-  return { artists, decades, mediums };
 }

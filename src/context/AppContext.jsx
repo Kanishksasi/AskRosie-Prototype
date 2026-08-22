@@ -3,7 +3,7 @@ import { t as translate } from "../data/strings.js";
 
 const AppContext = createContext(null);
 
-const STORAGE_KEY = "galleryguide:prefs:v1";
+const STORAGE_KEY = "askrosie:prefs:v1";
 
 function loadPrefs() {
   try {
@@ -22,9 +22,9 @@ const DEFAULT_PREFS = {
   descriptiveMode: false,
   readAloud: false,
   highContrast: false,
+  colorIntensity: 1, // 0 (grayscale) - 2 (vivid), 1 = normal
   fontScale: 1,
   eyeTracking: false,
-  favorites: [],
   onboarded: false,
 };
 
@@ -37,34 +37,38 @@ export function AppProvider({ children }) {
 
   useEffect(() => {
     const root = document.documentElement;
-    root.classList.remove("ar-cb-protanopia", "ar-cb-deuteranopia", "ar-cb-tritanopia");
-    if (prefs.colorblindMode !== "none") {
-      root.classList.add(`ar-cb-${prefs.colorblindMode}`);
-    }
+
+    // All three visual-accessibility controls (colorblind simulation,
+    // high contrast, color intensity) work by composing CSS `filter`
+    // functions. `filter` doesn't merge across separate class rules — only
+    // one declaration wins — so every active effect has to be combined
+    // into a single inline filter string here rather than toggled via
+    // independent CSS classes fighting over the same property.
+    const filters = [];
+    if (prefs.colorblindMode !== "none") filters.push(`url(#ar-${prefs.colorblindMode})`);
+    if (prefs.highContrast) filters.push("contrast(1.4)");
+    if (prefs.colorIntensity !== 1) filters.push(`saturate(${prefs.colorIntensity})`);
+    root.style.filter = filters.join(" ");
+
     root.classList.toggle("ar-high-contrast", !!prefs.highContrast);
-    root.style.setProperty("--ar-font-scale", String(prefs.fontScale || 1));
-  }, [prefs.colorblindMode, prefs.highContrast, prefs.fontScale]);
+
+    // Text-size control: most of the app sets explicit pixel font sizes
+    // (not rem/em), so a root font-size change has no effect on them.
+    // `zoom` rescales rendered size (text AND layout) directly, which
+    // works regardless of how individual components set their sizes.
+    // Applied to .gg-scroll-area (the actual page content) rather than
+    // <body>, so the desktop phone-frame chrome doesn't rescale with it.
+    const scrollArea = document.querySelector(".gg-scroll-area");
+    if (scrollArea) scrollArea.style.zoom = String(prefs.fontScale || 1);
+  }, [prefs.colorblindMode, prefs.highContrast, prefs.colorIntensity, prefs.fontScale]);
 
   const update = useCallback((patch) => {
     setPrefs((prev) => ({ ...prev, ...patch }));
   }, []);
 
-  const toggleFavorite = useCallback((artworkId) => {
-    setPrefs((prev) => {
-      const has = prev.favorites.includes(artworkId);
-      return {
-        ...prev,
-        favorites: has ? prev.favorites.filter((id) => id !== artworkId) : [...prev.favorites, artworkId],
-      };
-    });
-  }, []);
-
   const t = useCallback((key) => translate(prefs.lang, key), [prefs.lang]);
 
-  const value = useMemo(
-    () => ({ prefs, update, toggleFavorite, t }),
-    [prefs, update, toggleFavorite, t]
-  );
+  const value = useMemo(() => ({ prefs, update, t }), [prefs, update, t]);
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }

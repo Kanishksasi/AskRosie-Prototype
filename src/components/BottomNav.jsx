@@ -16,7 +16,6 @@ export default function BottomNav() {
   const items = [
     { to: "/capture", label: t("home"), icon: "🏠" },
     { to: "/collection", label: t("collectionTitle"), icon: "🖼️" },
-    { to: "/favorites", label: t("favoritesTitle"), icon: "♥" },
     { to: "/settings", label: t("settingsTitle"), icon: "⚙️" },
   ];
 

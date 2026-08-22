@@ -1,15 +1,27 @@
-# Gallery Guide — Concept Prototype
+# Ask Rosie — Concept Prototype
 
-**Independent concept prototype — not an official Crystal Bridges product.**
+A concept build presented directly to Crystal Bridges as a pitch for
+enhancements to their existing Ask Rosie digital companion
+(`askrosie.crystalbridges.org`). Because this is shared with them directly
+rather than distributed publicly, it deliberately mirrors their name and
+persona ("Rosie") and visual language, so it reads as a natural extension of
+what they already have rather than a separate product. Per the accompanying
+research brief (`crystal-bridges-ask-rosie-prototype-research.md`), it still
+avoids their actual collection data, brand assets, and any
+live/undocumented API — it's a self-contained build with its own small
+hand-written demo dataset (fictional titles/artists), not a scrape or clone
+of their real content. Most demo pieces are paired with a real,
+thematically-matching public-domain image (Art Institute of Chicago's open
+API, CC0) as a visual stand-in, credited on-screen — see `src/data/artworks.js`.
+A couple of pieces still show the original gradient placeholder where a
+suitable image wasn't sourced yet; `ArtworkArt` falls back to it
+automatically if an image is ever missing or fails to load.
 
-An original demonstration inspired by the *visitor value* of Crystal
-Bridges' AskRosie, built to be pitched back to Crystal Bridges as a set of
-possible enhancements. Per the accompanying research brief
-(`crystal-bridges-ask-rosie-prototype-research.md`), this deliberately does
-**not** use Crystal Bridges' product name, mascot name ("Rosie"), branding,
-collection data, or any live/undocumented API — it's a parallel,
-self-contained build with its own working title ("Gallery Guide") and AI
-persona ("Sage"), using a small hand-written demo dataset.
+**If this ever moves beyond a direct pitch** (public repo, distributed
+demo, shown to anyone outside Crystal Bridges), revisit the naming —
+using their product name and mascot outside that direct context is a
+different situation and should go back through the same IP considerations
+in the research brief.
 
 ## What's inspired by (not copied from) the live product
 
@@ -19,30 +31,32 @@ persona ("Sage"), using a small hand-written demo dataset.
 - The idea of a friendly onboarding + disclaimer + capture flow
 
 Nothing here reproduces Crystal Bridges' actual UI code, copy, collection
-data, or brand assets. If Crystal Bridges wants this prototyped against
-their real content or branding, that requires their explicit sign-off —
-see the outreach draft in the research brief.
+data, or brand assets — the name and persona are the intentional exception,
+per the note above.
 
 ## New/pitch features
 
 - **Citation-first grounded answers**: every reply comes back as
-  `{ answer, confidence, evidence, followUpQuestion, zoom }`. Sage is only
+  `{ answer, confidence, evidence, followUpQuestion, zoom }`. Rosie is only
   allowed to cite facts from each artwork's approved `sources` list
   (`src/data/artworks.js`); anything else is visual observation or flagged
   low-confidence rather than presented as fact.
 - **"Look closer" mode**: a structured notice → evidence → interpretation →
   question walkthrough instead of free-form chat.
+- **"Try recreating this"**: a hands-on creative prompt inviting visitors to
+  riff on the piece themselves rather than just read about it.
 - **Freshness metadata**: `onView`, `gallery`, `exhibition`, and
   `lastVerified` are shown on every artwork so nothing reads as a live,
   currently-accurate operational claim.
 - **Staff review queue (demo)**: low-confidence questions are logged
   locally (`src/lib/reviewQueue.js`) and viewable at `/#/staff-review` —
   a stand-in for a real curator content-gap dashboard.
-- **Grade-band mode** (K–5 / 6–8 / 9–12) that adjusts tone, vocabulary, and
-  reply length.
+- **Grade-band / expertise-level mode** (K–5 / 6–8 / 9–12 for students,
+  novice / casual / expert for adult visitors) that adjusts tone,
+  vocabulary, and reply length.
 - **Camera capture, upload, or browse-the-collection** as entry points,
-  with artist/date/medium filtering on the collection.
-- **Zoom-to-detail**: Sage's structured replies can include a `zoom`
+  with free-text artist/date/medium search on the collection.
+- **Zoom-to-detail**: Rosie's structured replies can include a `zoom`
   region, which the UI uses to animate the artwork image toward the detail
   she's describing.
 - **Accessibility suite**: color-vision simulation filters (protanopia /
@@ -52,7 +66,6 @@ see the outreach draft in the research brief.
 - **Experimental eye tracking**: opt-in, webcam-based gaze estimation
   (WebGazer.js) with a calibration flow — approximate, browser-based, not
   clinical-grade hardware tracking.
-- **Save artworks for later** (heart icon → Favorites, persisted locally).
 - **Multi-language** (English/Spanish), extensible via `src/data/strings.js`.
 
 ## Running it
@@ -72,18 +85,18 @@ erroring silently.
 
 ## Architecture notes
 
-- `src/pages/*` — one file per screen: onboarding flow, grade select,
-  capture, collection (browse/filter), chat, favorites, settings, and the
+- `src/pages/*` — one file per screen: onboarding flow, grade/expertise
+  select, capture, collection (browse/search), chat, settings, and the
   staff review demo
 - `src/context/AppContext.jsx` — all user preferences (language, grade
-  band, accessibility settings, favorites), persisted to `localStorage`
+  band, accessibility settings), persisted to `localStorage`
 - `src/data/artworks.js` — the demo "MuseumContentAPI": swap
   `fetchArtworks()`/`getArtwork()` for a real collection API later; every
   screen goes through these functions, never the raw array
 - `server/` — the only place the Groq key lives; `systemPrompt.js` builds
-  the grounding rules and JSON output contract per-request from grade band,
-  descriptive mode, look-closer mode, language, and the artwork's approved
-  sources
+  the grounding rules and JSON output contract per-request from grade
+  band, descriptive mode, look-closer/recreate mode, language, and the
+  artwork's approved sources
 - Camera captures and uploads are sent to the vision model directly with no
   approved sources (so answers about them stay low-confidence/observational
   by design); demo collection pieces are described to the model via their

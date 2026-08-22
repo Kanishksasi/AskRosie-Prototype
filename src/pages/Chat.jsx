@@ -2,21 +2,22 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useApp } from "../context/AppContext.jsx";
 import { getArtwork } from "../data/artworks.js";
-import { askSage } from "../lib/api.js";
+import { askRosie } from "../lib/api.js";
 import { logIfUnverified } from "../lib/reviewQueue.js";
 import { useEyeTracking } from "../hooks/useEyeTracking.js";
-import { Screen, Header, ArtworkArt, IconButton } from "../components/ui.jsx";
+import { getUiTier, TIER_CONFIG } from "../lib/uiTier.js";
+import { Screen, Header, ArtworkArt } from "../components/ui.jsx";
 
 const CONFIDENCE_COLOR = { high: "#2f7a45", medium: "var(--gg-olive)", low: "#a33b2b" };
 
 export default function Chat() {
   const { id } = useParams();
-  const { t, prefs, toggleFavorite } = useApp();
+  const { t, prefs } = useApp();
   const navigate = useNavigate();
 
   const isCustom = id === "custom-capture";
   const artwork = isCustom ? null : getArtwork(id);
-  const capturedImage = isCustom ? sessionStorage.getItem("galleryguide:capturedImage") : null;
+  const capturedImage = isCustom ? sessionStorage.getItem("askrosie:capturedImage") : null;
 
   useEffect(() => {
     if (!isCustom && !artwork) navigate("/collection", { replace: true });
@@ -33,7 +34,8 @@ export default function Chat() {
 
   const { status: eyeStatus, gaze } = useEyeTracking(prefs.eyeTracking);
 
-  const isFavorite = artwork ? prefs.favorites.includes(artwork.id) : false;
+  const tier = getUiTier(prefs.depthLevel);
+  const tierConfig = TIER_CONFIG[tier];
 
   const subjectLine = useMemo(() => {
     if (artwork) return `${artwork.title} (${artwork.year}) by ${artwork.artist} — ${artwork.medium}. ${artwork.blurb}`;
@@ -86,7 +88,7 @@ export default function Chat() {
         prompt = "I want to try recreating or riffing on this piece myself.";
       }
 
-      const reply = await askSage({
+      const reply = await askRosie({
         messages: [...history, { role: "user", content: prompt }],
         image: isCustom ? capturedImage : null,
         depthLevel: prefs.depthLevel,
@@ -142,16 +144,6 @@ export default function Chat() {
               <ArtworkArt artwork={artwork} height={220} radius={0} />
             )}
           </div>
-          {artwork && (
-            <IconButton
-              label={t("save")}
-              active={isFavorite}
-              onClick={() => toggleFavorite(artwork.id)}
-              style={{ position: "absolute", top: 12, right: 12 }}
-            >
-              {isFavorite ? "♥" : "♡"}
-            </IconButton>
-          )}
           {zoom && (
             <div
               style={{
@@ -181,6 +173,9 @@ export default function Chat() {
               {artwork.onView ? t("onViewLabel") : t("notOnViewLabel")} · {t("galleryLabel")}: {artwork.gallery} ·{" "}
               {t("lastVerifiedLabel")}: {artwork.lastVerified}
             </div>
+            {artwork.imageCredit && (
+              <div style={{ fontSize: 10, color: "#aaa", marginTop: 2 }}>{artwork.imageCredit}</div>
+            )}
           </div>
         )}
 
@@ -196,9 +191,9 @@ export default function Chat() {
             .filter((m) => !m.hidden)
             .map((m, i) =>
               m.role === "user" ? (
-                <ChatBubble key={i} text={m.text} />
+                <ChatBubble key={i} text={m.text} tierConfig={tierConfig} />
               ) : (
-                <AssistantTurn key={i} data={m.data} mode={m.mode} t={t} />
+                <AssistantTurn key={i} data={m.data} mode={m.mode} t={t} tierConfig={tierConfig} />
               )
             )}
           {loading && <ChatBubble text={t("thinking")} muted />}
@@ -212,12 +207,13 @@ export default function Chat() {
             disabled={loading}
             title={t("lookCloserHint")}
             style={{
-              fontSize: 12,
-              padding: "6px 14px",
+              fontSize: tierConfig.actionFontSize,
+              padding: tierConfig.actionPadding,
               borderRadius: 999,
               border: "1px solid var(--ar-teal)",
               background: "#fff",
               color: "var(--ar-teal)",
+              fontWeight: tier === "playful" ? 600 : 400,
               cursor: loading ? "not-allowed" : "pointer",
             }}
           >
@@ -228,12 +224,13 @@ export default function Chat() {
             disabled={loading}
             title={t("recreateHint")}
             style={{
-              fontSize: 12,
-              padding: "6px 14px",
+              fontSize: tierConfig.actionFontSize,
+              padding: tierConfig.actionPadding,
               borderRadius: 999,
               border: "1px solid var(--gg-tert-gold)",
               background: "#fff",
               color: "#8a6218",
+              fontWeight: tier === "playful" ? 600 : 400,
               cursor: loading ? "not-allowed" : "pointer",
             }}
           >
@@ -251,7 +248,7 @@ export default function Chat() {
               padding: "12px 16px",
               borderRadius: 999,
               border: "1px solid var(--ar-line)",
-              fontSize: 14,
+              fontSize: tierConfig.inputFontSize,
             }}
           />
           <button
@@ -275,16 +272,16 @@ export default function Chat() {
   );
 }
 
-function ChatBubble({ text, muted }) {
+function ChatBubble({ text, muted, tierConfig }) {
   return (
     <div style={{ display: "flex", justifyContent: "flex-start" }}>
       <div
         style={{
           maxWidth: "80%",
           padding: "10px 14px",
-          borderRadius: 16,
-          fontSize: 14,
-          lineHeight: 1.5,
+          borderRadius: tierConfig?.bubbleRadius ?? 16,
+          fontSize: tierConfig?.answerFontSize ?? 14,
+          lineHeight: tierConfig?.answerLineHeight ?? 1.5,
           background: "var(--ar-mist)",
           color: "var(--ar-ink)",
           opacity: muted ? 0.6 : 1,
@@ -298,17 +295,19 @@ function ChatBubble({ text, muted }) {
 
 const MODE_ACCENT = { lookCloser: "var(--ar-teal)", recreate: "var(--gg-tert-gold)" };
 
-function AssistantTurn({ data, mode, t }) {
+function AssistantTurn({ data, mode, t, tierConfig }) {
   const accent = MODE_ACCENT[mode];
+  const [sourcesOpen, setSourcesOpen] = useState(tierConfig.sourcesDefaultOpen);
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 6, alignItems: "flex-start" }}>
       <div
         style={{
           maxWidth: "88%",
           padding: "12px 14px",
-          borderRadius: 16,
-          fontSize: 14,
-          lineHeight: 1.55,
+          borderRadius: tierConfig.bubbleRadius,
+          fontSize: tierConfig.answerFontSize,
+          lineHeight: tierConfig.answerLineHeight,
           background: accent ? "#fff" : "var(--ar-mist)",
           border: accent ? `1px solid ${accent}` : "none",
           color: "var(--ar-ink)",
@@ -318,12 +317,31 @@ function AssistantTurn({ data, mode, t }) {
         {data.answer}
       </div>
 
-      <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, color: CONFIDENCE_COLOR[data.confidence] }}>
-        <span style={{ width: 8, height: 8, borderRadius: "50%", background: CONFIDENCE_COLOR[data.confidence] }} />
-        {t(`confidence${data.confidence[0].toUpperCase()}${data.confidence.slice(1)}`)}
-      </div>
+      {tierConfig.confidenceVisible && (
+        <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, color: CONFIDENCE_COLOR[data.confidence] }}>
+          <span style={{ width: 8, height: 8, borderRadius: "50%", background: CONFIDENCE_COLOR[data.confidence] }} />
+          {t(`confidence${data.confidence[0].toUpperCase()}${data.confidence.slice(1)}`)}
+        </div>
+      )}
 
-      {data.evidence?.length > 0 && (
+      {data.evidence?.length > 0 && !tierConfig.sourcesDefaultOpen && (
+        <button
+          onClick={() => setSourcesOpen((v) => !v)}
+          style={{
+            fontSize: 13,
+            color: "var(--ar-teal)",
+            background: "none",
+            border: "none",
+            textDecoration: "underline",
+            cursor: "pointer",
+            padding: 0,
+          }}
+        >
+          {sourcesOpen ? t("sourcesToggleHide") : t("sourcesToggleShow")}
+        </button>
+      )}
+
+      {data.evidence?.length > 0 && sourcesOpen && (
         <div style={{ maxWidth: "88%", background: "#fbfaf6", border: "1px solid var(--ar-line)", borderRadius: 12, padding: "8px 12px" }}>
           <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.4, color: "#888", marginBottom: 4 }}>
             {t("sourcesLabel")}
@@ -337,7 +355,7 @@ function AssistantTurn({ data, mode, t }) {
       )}
 
       {data.followUpQuestion && (
-        <div style={{ maxWidth: "88%", fontSize: 12, color: "var(--ar-teal)", fontStyle: "italic" }}>
+        <div style={{ maxWidth: "88%", fontSize: tierConfig.actionFontSize, color: "var(--ar-teal)", fontStyle: "italic" }}>
           {t("followUpLabel")} {data.followUpQuestion}
         </div>
       )}
@@ -354,7 +372,7 @@ function ApiError({ kind, t }) {
           <p style={{ margin: "6px 0 0" }}>{t("apiKeyMissingBody")}</p>
         </>
       ) : (
-        <p style={{ margin: 0 }}>Something went wrong reaching Sage. Please try again.</p>
+        <p style={{ margin: 0 }}>Something went wrong reaching Rosie. Please try again.</p>
       )}
     </div>
   );

@@ -1,29 +1,29 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useApp } from "../context/AppContext.jsx";
-import { fetchArtworks, getFilterOptions } from "../data/artworks.js";
+import { fetchArtworks } from "../data/artworks.js";
 import { Screen, Header, ArtworkArt } from "../components/ui.jsx";
 
 export default function Collection() {
   const { t } = useApp();
   const navigate = useNavigate();
   const artworks = fetchArtworks();
-  const { artists, decades, mediums } = getFilterOptions();
 
-  const [artist, setArtist] = useState("all");
-  const [decade, setDecade] = useState("all");
-  const [medium, setMedium] = useState("all");
+  const [artist, setArtist] = useState("");
+  const [date, setDate] = useState("");
+  const [medium, setMedium] = useState("");
 
-  const filtered = useMemo(
-    () =>
-      artworks.filter(
-        (a) =>
-          (artist === "all" || a.artist === artist) &&
-          (decade === "all" || a.decade === decade) &&
-          (medium === "all" || a.medium === medium)
-      ),
-    [artworks, artist, decade, medium]
-  );
+  const filtered = useMemo(() => {
+    const a = artist.trim().toLowerCase();
+    const d = date.trim().toLowerCase();
+    const m = medium.trim().toLowerCase();
+    return artworks.filter(
+      (art) =>
+        (!a || art.artist.toLowerCase().includes(a)) &&
+        (!d || art.decade.toLowerCase().includes(d) || String(art.year).includes(d)) &&
+        (!m || art.medium.toLowerCase().includes(m))
+    );
+  }, [artworks, artist, date, medium]);
 
   return (
     <Screen>
@@ -32,9 +32,9 @@ export default function Collection() {
         <h1 style={{ fontSize: 22, color: "var(--ar-teal)", margin: "8px 0 16px" }}>{t("collectionTitle")}</h1>
 
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 20 }}>
-          <FilterSelect label={t("filterArtist")} value={artist} onChange={setArtist} options={artists} allLabel={t("filterAll")} />
-          <FilterSelect label={t("filterDate")} value={decade} onChange={setDecade} options={decades} allLabel={t("filterAll")} />
-          <FilterSelect label={t("filterMedium")} value={medium} onChange={setMedium} options={mediums} allLabel={t("filterAll")} />
+          <FilterInput label={t("filterArtist")} value={artist} onChange={setArtist} placeholder={t("filterArtistPlaceholder")} />
+          <FilterInput label={t("filterDate")} value={date} onChange={setDate} placeholder={t("filterDatePlaceholder")} />
+          <FilterInput label={t("filterMedium")} value={medium} onChange={setMedium} placeholder={t("filterMediumPlaceholder")} />
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))", gap: 16 }}>
@@ -52,33 +52,31 @@ export default function Collection() {
             </button>
           ))}
         </div>
+
+        {filtered.length === 0 && <p style={{ fontSize: 13, color: "#888" }}>{t("filterEmpty")}</p>}
       </div>
     </Screen>
   );
 }
 
-function FilterSelect({ label, value, onChange, options, allLabel }) {
+function FilterInput({ label, value, onChange, placeholder }) {
   return (
     <label style={{ fontSize: 12, color: "#555", display: "flex", flexDirection: "column", gap: 4 }}>
       {label}
-      <select
+      <input
+        type="text"
         value={value}
         onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
         style={{
           padding: "8px 10px",
           borderRadius: 10,
           border: "1px solid var(--ar-line)",
           fontSize: 13,
           background: "#fff",
+          width: 150,
         }}
-      >
-        <option value="all">{allLabel}</option>
-        {options.map((o) => (
-          <option key={o} value={o}>
-            {o}
-          </option>
-        ))}
-      </select>
+      />
     </label>
   );
 }

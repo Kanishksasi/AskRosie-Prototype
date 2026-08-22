@@ -37,19 +37,15 @@
   --gg-navh: 68px;
 }
 
-/* Accessibility: color-vision filters applied to <html> */
-html.ar-cb-protanopia {
-  filter: url(#ar-protanopia);
-}
-html.ar-cb-deuteranopia {
-  filter: url(#ar-deuteranopia);
-}
-html.ar-cb-tritanopia {
-  filter: url(#ar-tritanopia);
-}
+/* Accessibility: colorblind simulation, high contrast, and color intensity
+   are all applied together as one composed inline `filter` on <html> from
+   AppContext.jsx (a single CSS `filter` declaration can't be split across
+   multiple class rules — the last one wins, they don't merge). This class
+   only carries the extra token overrides high-contrast mode gets on top of
+   its contrast() filter boost. */
 html.ar-high-contrast {
   --ar-sage: #e9efe4;
-  --ar-line: rgba(20, 20, 20, 0.35);
+  --ar-line: rgba(20, 20, 20, 0.4);
 }
 
 * {
@@ -67,7 +63,7 @@ body {
   font-family: var(--ar-font);
   background: var(--ar-cream);
   color: var(--ar-ink);
-  font-size: calc(16px * var(--ar-font-scale));
+  font-size: 16px;
   -webkit-font-smoothing: antialiased;
 }
 

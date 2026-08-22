@@ -55,7 +55,11 @@ export default function Onboarding() {
         <PrimaryButton
           onClick={() => {
             if (isLast) navigate("/grade");
-            else setIndex((i) => i + 1);
+            // Clamped rather than a bare i + 1: a fast double-tap can fire
+            // this handler twice before React re-renders with the updated
+            // index, so both calls would otherwise still see isLast=false
+            // and both increment, pushing the index past the last slide.
+            else setIndex((i) => Math.min(i + 1, SLIDES.length - 1));
           }}
         >
           {isLast ? t("start") : t("next")}

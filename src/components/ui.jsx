@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useApp } from "../context/AppContext.jsx";
 
@@ -21,50 +22,39 @@ export function Screen({ children, bg = "cream", center = false }) {
 export function Header({ dark = false }) {
   const { prefs, update, t } = useApp();
   return (
-    <header style={{ padding: "20px 24px 8px" }}>
-      <div
+    <header
+      style={{
+        padding: "20px 24px 8px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+      }}
+    >
+      <Link
+        to="/"
         style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
+          fontWeight: 700,
+          fontSize: 16,
+          textDecoration: "none",
+          color: dark ? "var(--ar-maroon)" : "var(--ar-maroon)",
         }}
       >
-        <Link
-          to="/"
-          style={{
-            fontWeight: 700,
-            fontSize: 16,
-            textDecoration: "none",
-            color: dark ? "var(--ar-maroon)" : "var(--ar-maroon)",
-          }}
-        >
-          {t("appName")}
-        </Link>
-        <button
-          onClick={() => update({ lang: prefs.lang === "en" ? "es" : "en" })}
-          style={{
-            background: "none",
-            border: "none",
-            fontSize: 14,
-            fontWeight: 500,
-            color: "var(--ar-maroon)",
-            cursor: "pointer",
-            textDecoration: "underline",
-          }}
-        >
-          {t("switchLang")}
-        </button>
-      </div>
-      <div
+        {t("appName")}
+      </Link>
+      <button
+        onClick={() => update({ lang: prefs.lang === "en" ? "es" : "en" })}
         style={{
-          fontSize: 10,
-          letterSpacing: 0.2,
-          color: dark ? "#8a8a8a" : "rgba(81,30,17,0.65)",
-          marginTop: 4,
+          background: "none",
+          border: "none",
+          fontSize: 14,
+          fontWeight: 500,
+          color: "var(--ar-maroon)",
+          cursor: "pointer",
+          textDecoration: "underline",
         }}
       >
-        {t("prototypeLabel")}
-      </div>
+        {t("switchLang")}
+      </button>
     </header>
   );
 }
@@ -86,32 +76,6 @@ export function PrimaryButton({ children, onClick, type = "button", disabled, st
         fontWeight: 600,
         cursor: disabled ? "not-allowed" : "pointer",
         transition: "opacity 120ms ease",
-        ...style,
-      }}
-    >
-      {children}
-    </button>
-  );
-}
-
-export function IconButton({ children, onClick, label, active, style }) {
-  return (
-    <button
-      onClick={onClick}
-      aria-label={label}
-      title={label}
-      style={{
-        width: 44,
-        height: 44,
-        borderRadius: "50%",
-        border: "1px solid var(--ar-line)",
-        background: active ? "var(--ar-maroon)" : "#fff",
-        color: active ? "#fff" : "var(--ar-ink)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        cursor: "pointer",
-        fontSize: 18,
         ...style,
       }}
     >
@@ -173,7 +137,40 @@ export function Modal({ open, onClose, title, children }) {
 const ART_PATTERNS = ["ar-pattern-strokes", "ar-pattern-dots", "ar-pattern-waves"];
 
 export function ArtworkArt({ artwork, height = 220, radius = 16 }) {
+  // Falls back to the gradient placeholder if `artwork.image` is missing
+  // OR if it's set but fails to actually load (broken path, network
+  // hiccup, source taken down) — never leaves a broken-image icon showing.
+  const [imageFailed, setImageFailed] = useState(false);
+
   if (!artwork) return null;
+
+  if (artwork.image && !imageFailed) {
+    return (
+      <div style={{ height, borderRadius: radius, position: "relative", overflow: "hidden" }}>
+        <img
+          src={artwork.image}
+          alt={`${artwork.title} by ${artwork.artist}`}
+          onError={() => setImageFailed(true)}
+          style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+        />
+        <span
+          style={{
+            position: "absolute",
+            bottom: 12,
+            left: 12,
+            fontSize: 11,
+            background: "rgba(0,0,0,0.45)",
+            color: "#fff",
+            padding: "3px 8px",
+            borderRadius: 999,
+          }}
+        >
+          demo image
+        </span>
+      </div>
+    );
+  }
+
   const [c1, c2, c3] = artwork.palette;
   const pattern = ART_PATTERNS[artwork.id.length % ART_PATTERNS.length];
   return (

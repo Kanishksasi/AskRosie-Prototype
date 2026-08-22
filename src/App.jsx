@@ -9,7 +9,6 @@ import Disclaimer from "./pages/Disclaimer.jsx";
 import Capture from "./pages/Capture.jsx";
 import Collection from "./pages/Collection.jsx";
 import Chat from "./pages/Chat.jsx";
-import Favorites from "./pages/Favorites.jsx";
 import Settings from "./pages/Settings.jsx";
 import StaffReview from "./pages/StaffReview.jsx";
 
@@ -30,7 +29,6 @@ function AppShell() {
             <Route path="/capture" element={<Capture />} />
             <Route path="/collection" element={<Collection />} />
             <Route path="/chat/:id" element={<Chat />} />
-            <Route path="/favorites" element={<Favorites />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/staff-review" element={<StaffReview />} />
           </Routes>
