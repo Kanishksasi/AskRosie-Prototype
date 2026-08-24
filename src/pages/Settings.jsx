@@ -2,7 +2,6 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useApp } from "../context/AppContext.jsx";
 import { Screen, Header } from "../components/ui.jsx";
-import { useEyeTracking } from "../hooks/useEyeTracking.js";
 import EyeCalibration from "../components/EyeCalibration.jsx";
 
 const GRADE_OPTIONS = [
@@ -13,6 +12,7 @@ const GRADE_OPTIONS = [
   { id: "novice", labelKey: "levelNovice" },
   { id: "casual", labelKey: "levelCasual" },
   { id: "expert", labelKey: "levelExpert" },
+  { id: "teacher", labelKey: "levelTeacher" },
 ];
 
 const CB_OPTIONS = [
@@ -23,9 +23,10 @@ const CB_OPTIONS = [
 ];
 
 export default function Settings() {
-  const { t, prefs, update } = useApp();
+  const { t, prefs, update, eyeTracking } = useApp();
   const [calibrating, setCalibrating] = useState(false);
-  const { status: eyeStatus, calibrate } = useEyeTracking(prefs.eyeTracking);
+  const [calibrated, setCalibrated] = useState(false);
+  const { status: eyeStatus, calibrate } = eyeTracking;
 
   return (
     <Screen>
@@ -102,23 +103,31 @@ export default function Settings() {
         </Field>
 
         <Field label={t("settingsEyeTracking")} help={t("settingsEyeTrackingHelp")}>
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <Toggle checked={prefs.eyeTracking} onChange={(v) => update({ eyeTracking: v })} />
+          <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+            <Toggle checked={prefs.eyeTracking} onChange={(v) => { update({ eyeTracking: v }); setCalibrated(false); }} />
             {prefs.eyeTracking && (
-              <button
-                onClick={() => setCalibrating(true)}
-                disabled={eyeStatus !== "ready"}
-                style={{
-                  padding: "6px 14px",
-                  borderRadius: 999,
-                  border: "1px solid var(--ar-line)",
-                  background: "#fff",
-                  fontSize: 12,
-                  cursor: eyeStatus === "ready" ? "pointer" : "not-allowed",
-                }}
-              >
-                {t("calibrate")} {eyeStatus !== "ready" && `(${eyeStatus})`}
-              </button>
+              <>
+                <span style={{ fontSize: 12, color: eyeStatus === "error" ? "var(--ar-danger)" : "#777" }}>
+                  {t(`eyeStatus_${eyeStatus}`)}
+                </span>
+                <button
+                  onClick={() => setCalibrating(true)}
+                  disabled={eyeStatus !== "ready"}
+                  style={{
+                    padding: "6px 14px",
+                    borderRadius: 0,
+                    border: "1px solid var(--ar-ink)",
+                    background: calibrated ? "var(--ar-ink)" : "#fff",
+                    color: calibrated ? "#fff" : "var(--ar-ink)",
+                    fontSize: 12,
+                    letterSpacing: 0.3,
+                    cursor: eyeStatus === "ready" ? "pointer" : "not-allowed",
+                    opacity: eyeStatus === "ready" ? 1 : 0.4,
+                  }}
+                >
+                  {calibrated ? t("recalibrate") : t("calibrate")}
+                </button>
+              </>
             )}
           </div>
         </Field>
@@ -129,7 +138,14 @@ export default function Settings() {
       </div>
 
       {calibrating && (
-        <EyeCalibration onPoint={(p) => calibrate([p])} onDone={() => setCalibrating(false)} />
+        <EyeCalibration
+          onPoint={(p) => calibrate([p])}
+          onDone={() => {
+            setCalibrating(false);
+            setCalibrated(true);
+          }}
+          onCancel={() => setCalibrating(false)}
+        />
       )}
     </Screen>
   );

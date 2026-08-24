@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState, useCallback } from "react";
 import { t as translate } from "../data/strings.js";
+import { useEyeTracking } from "../hooks/useEyeTracking.js";
 
 const AppContext = createContext(null);
 
@@ -68,7 +69,16 @@ export function AppProvider({ children }) {
 
   const t = useCallback((key) => translate(prefs.lang, key), [prefs.lang]);
 
-  const value = useMemo(() => ({ prefs, update, t }), [prefs, update, t]);
+  // Single instance for the whole app lifetime — see useEyeTracking.js and
+  // the fix note there. Previously each page (Settings, Chat) called this
+  // hook independently, so navigating between them re-ran
+  // webgazer.begin() on an already-running instance on every visit.
+  const eyeTracking = useEyeTracking(prefs.eyeTracking);
+
+  const value = useMemo(
+    () => ({ prefs, update, t, eyeTracking }),
+    [prefs, update, t, eyeTracking]
+  );
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }

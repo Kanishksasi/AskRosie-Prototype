@@ -3,15 +3,19 @@ import { useApp } from "../context/AppContext.jsx";
 import { Screen, PrimaryButton } from "../components/ui.jsx";
 
 const STUDENT_BANDS = [
-  { id: "k5", titleKey: "gradeK5", descKey: "gradeK5Desc", emoji: "🧸" },
-  { id: "68", titleKey: "grade68", descKey: "grade68Desc", emoji: "🔭" },
-  { id: "912", titleKey: "grade912", descKey: "grade912Desc", emoji: "🖼️" },
+  { id: "k5", titleKey: "gradeK5", descKey: "gradeK5Desc", badge: "K–5" },
+  { id: "68", titleKey: "grade68", descKey: "grade68Desc", badge: "6–8" },
+  { id: "912", titleKey: "grade912", descKey: "grade912Desc", badge: "9–12" },
 ];
 
 const ADULT_LEVELS = [
-  { id: "novice", titleKey: "levelNovice", descKey: "levelNoviceDesc", emoji: "🌱" },
-  { id: "casual", titleKey: "levelCasual", descKey: "levelCasualDesc", emoji: "🎨" },
-  { id: "expert", titleKey: "levelExpert", descKey: "levelExpertDesc", emoji: "🎓" },
+  { id: "novice", titleKey: "levelNovice", descKey: "levelNoviceDesc", badge: "NEW" },
+  { id: "casual", titleKey: "levelCasual", descKey: "levelCasualDesc", badge: "CAS" },
+  { id: "expert", titleKey: "levelExpert", descKey: "levelExpertDesc", badge: "EXP" },
+];
+
+const TEACHER_LEVELS = [
+  { id: "teacher", titleKey: "levelTeacher", descKey: "levelTeacherDesc", badge: "EDU" },
 ];
 
 export default function GradeSelect() {
@@ -33,6 +37,7 @@ export default function GradeSelect() {
 
         <LevelGroup label={t("studentSectionLabel")} options={STUDENT_BANDS} selected={prefs.depthLevel} onChoose={choose} t={t} />
         <LevelGroup label={t("adultSectionLabel")} options={ADULT_LEVELS} selected={prefs.depthLevel} onChoose={choose} t={t} />
+        <LevelGroup label={t("teacherSectionLabel")} options={TEACHER_LEVELS} selected={prefs.depthLevel} onChoose={choose} t={t} />
 
         <div style={{ marginTop: "auto", paddingTop: 12, display: "flex", flexDirection: "column", gap: 10 }}>
           <PrimaryButton onClick={() => navigate("/disclaimer")} style={{ background: "var(--ar-ink)" }}>
@@ -76,8 +81,23 @@ function LevelGroup({ label, options, selected, onChoose, t }) {
               cursor: "pointer",
             }}
           >
-            <span style={{ fontSize: 24 }} aria-hidden="true">
-              {b.emoji}
+            <span
+              aria-hidden="true"
+              style={{
+                flexShrink: 0,
+                width: 40,
+                height: 40,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                border: `1.5px solid ${selected === b.id ? "var(--ar-maroon)" : "var(--ar-ink)"}`,
+                color: selected === b.id ? "var(--ar-maroon)" : "var(--ar-ink)",
+                fontSize: 11,
+                fontWeight: 700,
+                letterSpacing: 0.3,
+              }}
+            >
+              {b.badge}
             </span>
             <span>
               <div style={{ fontWeight: 600, fontSize: 14, color: "var(--ar-ink)" }}>{t(b.titleKey)}</div>

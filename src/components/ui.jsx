@@ -85,6 +85,7 @@ export function PrimaryButton({ children, onClick, type = "button", disabled, st
 }
 
 export function Modal({ open, onClose, title, children }) {
+  const { t } = useApp();
   if (!open) return null;
   return (
     <div
@@ -112,20 +113,23 @@ export function Modal({ open, onClose, title, children }) {
       >
         <button
           onClick={onClose}
-          aria-label="Close"
           style={{
             position: "absolute",
             top: 16,
             right: 16,
-            width: 32,
-            height: 32,
-            borderRadius: "50%",
-            border: "none",
-            background: "#eee",
+            padding: "6px 12px",
+            borderRadius: 0,
+            border: "1px solid var(--ar-ink)",
+            background: "#fff",
+            color: "var(--ar-ink)",
+            fontSize: 11,
+            fontWeight: 600,
+            letterSpacing: 0.3,
+            textTransform: "uppercase",
             cursor: "pointer",
           }}
         >
-          ✕
+          {t("close")}
         </button>
         {title && <h2 style={{ margin: "0 32px 8px 0", fontSize: 18, color: "var(--ar-maroon)" }}>{title}</h2>}
         <div style={{ fontSize: 14, lineHeight: 1.6, color: "#333" }}>{children}</div>

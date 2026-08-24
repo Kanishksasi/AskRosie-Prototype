@@ -4,8 +4,8 @@ import { useApp } from "../context/AppContext.jsx";
 import { Screen, PrimaryButton } from "../components/ui.jsx";
 
 const SLIDES = [
-  { titleKey: "onboard1Title", bodyKey: "onboard1Body", emoji: "📷" },
-  { titleKey: "onboard2Title", bodyKey: "onboard2Body", emoji: "💬" },
+  { titleKey: "onboard1Title", bodyKey: "onboard1Body", mark: "01" },
+  { titleKey: "onboard2Title", bodyKey: "onboard2Body", mark: "02" },
 ];
 
 export default function Onboarding() {
@@ -29,11 +29,21 @@ export default function Onboarding() {
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            fontSize: 96,
           }}
           aria-hidden="true"
         >
-          {slide.emoji}
+          <span
+            style={{
+              fontSize: 140,
+              fontWeight: 800,
+              lineHeight: 1,
+              color: "var(--ar-maroon)",
+              opacity: 0.14,
+              letterSpacing: -4,
+            }}
+          >
+            {slide.mark}
+          </span>
         </div>
 
         <div style={{ display: "flex", justifyContent: "center", gap: 6, marginBottom: 24 }}>

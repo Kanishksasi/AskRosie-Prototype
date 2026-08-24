@@ -4,7 +4,6 @@ import { useApp } from "../context/AppContext.jsx";
 import { getArtwork } from "../data/artworks.js";
 import { askRosie } from "../lib/api.js";
 import { logIfUnverified } from "../lib/reviewQueue.js";
-import { useEyeTracking } from "../hooks/useEyeTracking.js";
 import { getUiTier, TIER_CONFIG } from "../lib/uiTier.js";
 import { Screen, Header, ArtworkArt } from "../components/ui.jsx";
 
@@ -12,7 +11,7 @@ const CONFIDENCE_COLOR = { high: "#2f7a45", medium: "var(--gg-olive)", low: "#a3
 
 export default function Chat() {
   const { id } = useParams();
-  const { t, prefs } = useApp();
+  const { t, prefs, eyeTracking } = useApp();
   const navigate = useNavigate();
 
   const isCustom = id === "custom-capture";
@@ -32,7 +31,7 @@ export default function Chat() {
   const bottomRef = useRef(null);
   const startedRef = useRef(false);
 
-  const { status: eyeStatus, gaze } = useEyeTracking(prefs.eyeTracking);
+  const { status: eyeStatus, gaze } = eyeTracking;
 
   const tier = getUiTier(prefs.depthLevel);
   const tierConfig = TIER_CONFIG[tier];
@@ -135,7 +134,7 @@ export default function Chat() {
   return (
     <Screen>
       <Header dark />
-      <div style={{ maxWidth: 560, margin: "0 auto", width: "100%", flex: 1, display: "flex", flexDirection: "column", padding: "0 20px 20px" }}>
+      <div style={{ maxWidth: 560, margin: "0 auto", width: "100%", flex: 1, minHeight: 0, display: "flex", flexDirection: "column", padding: "0 20px 20px" }}>
         <div style={{ borderRadius: 20, overflow: "hidden", position: "relative", marginBottom: 12 }}>
           <div style={{ transition: "transform 900ms cubic-bezier(0.22,1,0.36,1)", ...imageStyle }}>
             {isCustom && capturedImage ? (
@@ -181,12 +180,12 @@ export default function Chat() {
 
         {prefs.eyeTracking && (
           <div style={{ fontSize: 11, color: "#888", marginBottom: 8 }}>
-            👁 eye-tracking: {eyeStatus}
+            Eye-tracking: {t(`eyeStatus_${eyeStatus}`)}
             {gaze && ` — (${Math.round(gaze.x)}, ${Math.round(gaze.y)})`}
           </div>
         )}
 
-        <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: 10, paddingBottom: 12 }}>
+        <div style={{ flex: 1, minHeight: 0, overflowY: "auto", display: "flex", flexDirection: "column", gap: 10, paddingBottom: 12 }}>
           {messages
             .filter((m) => !m.hidden)
             .map((m, i) =>
@@ -217,7 +216,7 @@ export default function Chat() {
               cursor: loading ? "not-allowed" : "pointer",
             }}
           >
-            🔍 {t("lookCloser")}
+            {t("lookCloser")}
           </button>
           <button
             onClick={() => void sendTurn({ recreate: true })}
@@ -234,7 +233,7 @@ export default function Chat() {
               cursor: loading ? "not-allowed" : "pointer",
             }}
           >
-            🎨 {t("recreate")}
+            {t("recreate")}
           </button>
         </div>
 

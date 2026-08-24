@@ -14,9 +14,9 @@ export default function BottomNav() {
   if (!show) return null;
 
   const items = [
-    { to: "/capture", label: t("home"), icon: "🏠" },
-    { to: "/collection", label: t("collectionTitle"), icon: "🖼️" },
-    { to: "/settings", label: t("settingsTitle"), icon: "⚙️" },
+    { to: "/capture", label: t("navHome") },
+    { to: "/collection", label: t("navCollection") },
+    { to: "/settings", label: t("navSettings") },
   ];
 
   return (
@@ -32,7 +32,7 @@ export default function BottomNav() {
         alignItems: "center",
         background: "#fff",
         borderTop: "1px solid var(--ar-line)",
-        padding: "8px 4px calc(8px + env(safe-area-inset-bottom))",
+        padding: "10px 4px calc(10px + env(safe-area-inset-bottom))",
         zIndex: 20,
       }}
     >
@@ -44,19 +44,29 @@ export default function BottomNav() {
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
-            gap: 2,
-            fontSize: 10,
+            gap: 6,
+            fontSize: 12,
+            fontWeight: isActive ? 700 : 500,
+            letterSpacing: 0.2,
             textDecoration: "none",
             color: isActive ? "var(--ar-maroon)" : "#888",
-            padding: "4px 10px",
+            padding: "4px 14px",
           })}
         >
-          <span style={{ fontSize: 18 }} aria-hidden="true">
-            {item.icon}
-          </span>
-          <span style={{ maxWidth: 64, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-            {item.label}
-          </span>
+          {({ isActive }) => (
+            <>
+              {item.label}
+              <span
+                aria-hidden="true"
+                style={{
+                  width: isActive ? 18 : 0,
+                  height: 2,
+                  background: "var(--ar-maroon)",
+                  transition: "width 160ms ease",
+                }}
+              />
+            </>
+          )}
         </NavLink>
       ))}
     </nav>

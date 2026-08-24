@@ -5,7 +5,7 @@
 export function getUiTier(depthLevel) {
   if (depthLevel === "k5") return "playful";
   if (depthLevel === "68") return "middle";
-  if (depthLevel === "912" || depthLevel === "expert") return "detailed";
+  if (depthLevel === "912" || depthLevel === "expert" || depthLevel === "teacher") return "detailed";
   return "standard"; // novice, casual, or no selection
 }
 

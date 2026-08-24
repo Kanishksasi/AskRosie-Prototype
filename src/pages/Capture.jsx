@@ -120,16 +120,13 @@ export default function Capture() {
               width: 72,
               height: 72,
               borderRadius: "50%",
-              border: "none",
+              border: `4px solid ${cameraState === "ready" ? "#fff" : "#ccc"}`,
               background: cameraState === "ready" ? "var(--ar-ink)" : "#999",
-              color: "#fff",
-              fontSize: 26,
               alignSelf: "center",
               cursor: cameraState === "ready" ? "pointer" : "not-allowed",
+              boxShadow: "0 0 0 2px var(--ar-ink)",
             }}
-          >
-            📷
-          </button>
+          />
 
           <button
             onClick={() => setInfoOpen(true)}

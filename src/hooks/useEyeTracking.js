@@ -71,6 +71,20 @@ export function useEyeTracking(enabled) {
     };
   }, [enabled]);
 
+  // True unmount (app teardown), independent of the `enabled` toggle above —
+  // that effect only tears down webgazer when the pref flips to false, not
+  // when this hook's owner unmounts. Without this, a hard app unmount would
+  // leave the camera stream running forever.
+  useEffect(() => {
+    return () => {
+      try {
+        gazerRef.current?.end();
+      } catch {
+        /* noop */
+      }
+    };
+  }, []);
+
   const calibrate = useCallback((points) => {
     const gz = gazerRef.current;
     if (!gz) return;
