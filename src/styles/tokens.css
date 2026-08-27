@@ -110,6 +110,27 @@ a {
   position: fixed;
 }
 
+/* The head-pointer's blink-click feedback (see HeadPointer.jsx). Keyframe
+   transform values win over the element's own inline transform for the
+   animation's duration, then it cleanly reverts to the inline value. */
+.ar-head-pointer-blink {
+  animation: ar-pointer-pulse 260ms ease-out;
+}
+@keyframes ar-pointer-pulse {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+    background: rgba(81, 30, 17, 0.15);
+  }
+  40% {
+    transform: translate(-50%, -50%) scale(1.6);
+    background: rgba(81, 30, 17, 0.45);
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+    background: rgba(81, 30, 17, 0.15);
+  }
+}
+
 @media (min-width: 700px) {
   .gg-shell {
     background: var(--gg-backdrop);

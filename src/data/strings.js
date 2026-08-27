@@ -84,9 +84,9 @@ export const STRINGS = {
     settingsColorIntensity: "Color intensity",
     settingsColorIntensityHelp: "Turn colors down for a calmer, lower-sensory view, or up for more vivid contrast between hues.",
     settingsTextSize: "Text size",
-    settingsEyeTracking: "Eye-tracking mode (experimental)",
+    settingsEyeTracking: "Eye pointer & blink click (experimental)",
     settingsEyeTrackingHelp:
-      "Uses your webcam to estimate where you're looking so the app can highlight what you're focused on. Approximate, browser-based gaze estimation — not clinical-grade hardware tracking.",
+      "Like Apple's Head Pointer, but driven by your eyes instead of your head: a pointer follows where you're looking, and blinking both eyes clicks whatever it's pointing at — works everywhere on screen, including this bar. Approximate, browser-based estimation — not clinical-grade hardware tracking.",
     calibrate: "Calibrate",
     recalibrate: "Re-calibrate",
     eyeStatus_idle: "Off",
@@ -204,9 +204,9 @@ export const STRINGS = {
     settingsColorIntensity: "Intensidad del color",
     settingsColorIntensityHelp: "Reduce los colores para una vista más tranquila y de bajo estímulo, o auméntalos para más contraste entre tonos.",
     settingsTextSize: "Tamaño del texto",
-    settingsEyeTracking: "Modo de seguimiento ocular (experimental)",
+    settingsEyeTracking: "Puntero ocular y clic con parpadeo (experimental)",
     settingsEyeTrackingHelp:
-      "Usa tu cámara web para estimar hacia dónde miras. Estimación aproximada basada en el navegador, no un rastreo de grado clínico.",
+      "Como el Head Pointer de Apple, pero con tus ojos en vez de tu cabeza: un puntero sigue hacia dónde miras, y parpadear con ambos ojos hace clic en lo que señala — funciona en toda la pantalla, incluida esta barra. Estimación aproximada basada en el navegador, no un rastreo de grado clínico.",
     calibrate: "Calibrar",
     recalibrate: "Volver a calibrar",
     eyeStatus_idle: "Desactivado",
