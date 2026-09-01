@@ -20,12 +20,20 @@ const BLINK_THRESHOLD = 0.55;
 // deliberate, separate blinks still both count.
 const BLINK_COOLDOWN_MS = 700;
 // How much a normalized head-position shift (0-1 across the camera frame)
-// moves the pointer, as a multiple of the screen dimension. Tuned for a
-// comfortable, non-extreme head turn to cover most of the screen — the one
-// knob to adjust if the pointer feels too twitchy (lower it) or too stiff
-// (raise it) once tested against a real camera.
-const SENSITIVITY_X = 20;
-const SENSITIVITY_Y = 20;
+// moves the pointer, as a multiple of the app's own width/height (not the
+// browser window — see APP_SELECTOR below). Lower = a bigger head turn
+// needed to cross the screen (steadier, less twitchy); higher = a smaller
+// turn covers more ground. This is the one knob to adjust if it still
+// feels off once tested against a real camera.
+const SENSITIVITY_X = 9;
+const SENSITIVITY_Y = 9;
+// The pointer is confined to (and scaled against) this element's own
+// bounds, not window.innerWidth/innerHeight — on desktop the app renders
+// as a centered phone-frame card narrower than the full browser window,
+// with a decorative backdrop around it that isn't part of the app at all.
+// Without this, the pointer could wander into that backdrop, well past
+// anything it could actually click.
+const APP_SELECTOR = ".gg-phone";
 // How strongly a blink-click's observed error nudges the drift-correction
 // offset — a partial correction so one stray click can't overcorrect, but
 // repeated clicks in the same direction steadily fix a real drift.
@@ -172,14 +180,26 @@ export function useEyeTracking(enabled) {
 
             const dx = center.x - neutralRef.current.x;
             const dy = center.y - neutralRef.current.y;
+
+            // Bound (and scale) against the app's own card, not the raw
+            // browser window — see APP_SELECTOR above. Falls back to the
+            // window if that element isn't found for some reason, so this
+            // never just breaks.
+            const appEl = document.querySelector(APP_SELECTOR);
+            const bounds = appEl
+              ? appEl.getBoundingClientRect()
+              : { left: 0, top: 0, right: window.innerWidth, bottom: window.innerHeight, width: window.innerWidth, height: window.innerHeight };
+
             // Mirrored horizontally so turning your head right moves the
             // pointer right, matching how you see yourself on a webcam —
             // not how the raw, unmirrored camera frame is laid out.
-            const rawX = window.innerWidth / 2 - dx * SENSITIVITY_X * window.innerWidth;
-            const rawY = window.innerHeight / 2 + dy * SENSITIVITY_Y * window.innerHeight;
+            const centerX = bounds.left + bounds.width / 2;
+            const centerY = bounds.top + bounds.height / 2;
+            const rawX = centerX - dx * SENSITIVITY_X * bounds.width;
+            const rawY = centerY + dy * SENSITIVITY_Y * bounds.height;
             const point = {
-              x: Math.min(window.innerWidth, Math.max(0, rawX + biasRef.current.x)),
-              y: Math.min(window.innerHeight, Math.max(0, rawY + biasRef.current.y)),
+              x: Math.min(bounds.right, Math.max(bounds.left, rawX + biasRef.current.x)),
+              y: Math.min(bounds.bottom, Math.max(bounds.top, rawY + biasRef.current.y)),
             };
 
             // Light smoothing on top of the raw per-frame reading — head
