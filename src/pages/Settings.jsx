@@ -26,7 +26,7 @@ export default function Settings() {
   const { t, prefs, update, eyeTracking } = useApp();
   const [calibrating, setCalibrating] = useState(false);
   const [calibrated, setCalibrated] = useState(false);
-  const { status: eyeStatus, calibrate } = eyeTracking;
+  const { status: eyeStatus, recenter } = eyeTracking;
 
   return (
     <Screen>
@@ -145,7 +145,7 @@ export default function Settings() {
 
       {calibrating && (
         <EyeCalibration
-          onPoint={(p) => calibrate([p])}
+          onRecenter={recenter}
           onDone={() => {
             setCalibrating(false);
             setCalibrated(true);

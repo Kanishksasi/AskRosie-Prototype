@@ -69,10 +69,10 @@ export function AppProvider({ children }) {
 
   const t = useCallback((key) => translate(prefs.lang, key), [prefs.lang]);
 
-  // Single instance for the whole app lifetime — see useEyeTracking.js and
-  // the fix note there. Previously each page (Settings, Chat) called this
-  // hook independently, so navigating between them re-ran
-  // webgazer.begin() on an already-running instance on every visit.
+  // Single instance for the whole app lifetime — see useEyeTracking.js.
+  // Previously each page (Settings, Chat) called this hook independently,
+  // so navigating between them re-requested the camera and re-ran the
+  // whole init pipeline on every visit.
   const eyeTracking = useEyeTracking(prefs.eyeTracking);
 
   const value = useMemo(
