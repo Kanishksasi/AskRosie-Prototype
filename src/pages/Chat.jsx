@@ -30,6 +30,7 @@ export default function Chat() {
   const [zoom, setZoom] = useState(null);
   const bottomRef = useRef(null);
   const startedRef = useRef(false);
+  const zoomTimeoutRef = useRef(null);
 
   const { status: eyeStatus, gaze } = eyeTracking;
 
@@ -99,8 +100,12 @@ export default function Chat() {
       });
 
       if (reply.zoom) {
+        // Clear any still-pending timeout from a previous zoom first — two
+        // zoom-triggering replies within 4.2s of each other would otherwise
+        // let the OLDER timeout null out the NEWER zoom mid-display.
+        if (zoomTimeoutRef.current) clearTimeout(zoomTimeoutRef.current);
         setZoom(reply.zoom);
-        setTimeout(() => setZoom(null), 4200);
+        zoomTimeoutRef.current = setTimeout(() => setZoom(null), 4200);
       }
 
       const mode = lookCloser ? "lookCloser" : recreate ? "recreate" : null;
@@ -296,7 +301,8 @@ const MODE_ACCENT = { lookCloser: "var(--ar-teal)", recreate: "var(--gg-tert-gol
 
 function AssistantTurn({ data, mode, t, tierConfig }) {
   const accent = MODE_ACCENT[mode];
-  const [sourcesOpen, setSourcesOpen] = useState(tierConfig.sourcesDefaultOpen);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const hasEvidence = data.evidence?.length > 0;
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 6, alignItems: "flex-start" }}>
@@ -316,34 +322,31 @@ function AssistantTurn({ data, mode, t, tierConfig }) {
         {data.answer}
       </div>
 
-      {tierConfig.confidenceVisible && (
-        <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, color: CONFIDENCE_COLOR[data.confidence] }}>
-          <span style={{ width: 8, height: 8, borderRadius: "50%", background: CONFIDENCE_COLOR[data.confidence] }} />
-          {t(`confidence${data.confidence[0].toUpperCase()}${data.confidence.slice(1)}`)}
-        </div>
-      )}
-
-      {data.evidence?.length > 0 && !tierConfig.sourcesDefaultOpen && (
+      {hasEvidence && (
         <button
-          onClick={() => setSourcesOpen((v) => !v)}
+          onClick={() => setDetailsOpen((v) => !v)}
           style={{
-            fontSize: 13,
-            color: "var(--ar-teal)",
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            fontSize: 12,
+            color: "#888",
             background: "none",
             border: "none",
-            textDecoration: "underline",
             cursor: "pointer",
             padding: 0,
           }}
         >
-          {sourcesOpen ? t("sourcesToggleHide") : t("sourcesToggleShow")}
+          <span style={{ width: 7, height: 7, borderRadius: "50%", background: CONFIDENCE_COLOR[data.confidence] }} />
+          {detailsOpen ? t("sourcesToggleHide") : t("sourcesToggleShow")}
         </button>
       )}
 
-      {data.evidence?.length > 0 && sourcesOpen && (
+      {hasEvidence && detailsOpen && (
         <div style={{ maxWidth: "88%", background: "#fbfaf6", border: "1px solid var(--ar-line)", borderRadius: 12, padding: "8px 12px" }}>
-          <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.4, color: "#888", marginBottom: 4 }}>
-            {t("sourcesLabel")}
+          <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, color: CONFIDENCE_COLOR[data.confidence], marginBottom: 6 }}>
+            <span style={{ width: 8, height: 8, borderRadius: "50%", background: CONFIDENCE_COLOR[data.confidence] }} />
+            {t(`confidence${data.confidence[0].toUpperCase()}${data.confidence.slice(1)}`)}
           </div>
           {data.evidence.map((e, i) => (
             <div key={i} style={{ fontSize: 12, color: "#444", marginBottom: 2 }}>

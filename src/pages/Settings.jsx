@@ -107,7 +107,13 @@ export default function Settings() {
             <Toggle checked={prefs.eyeTracking} onChange={(v) => { update({ eyeTracking: v }); setCalibrated(false); }} />
             {prefs.eyeTracking && (
               <>
-                <span style={{ fontSize: 12, color: eyeStatus === "error" ? "var(--ar-danger)" : "#777" }}>
+                <span
+                  style={{
+                    fontSize: 12,
+                    color: eyeStatus === "error" || eyeStatus === "denied" ? "var(--ar-danger)" : "#777",
+                    maxWidth: 280,
+                  }}
+                >
                   {t(`eyeStatus_${eyeStatus}`)}
                 </span>
                 <button

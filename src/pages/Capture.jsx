@@ -11,6 +11,7 @@ export default function Capture() {
   const fileInputRef = useRef(null);
   const [cameraState, setCameraState] = useState("idle"); // idle | ready | denied
   const [infoOpen, setInfoOpen] = useState(false);
+  const [tipsOpen, setTipsOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -109,6 +110,31 @@ export default function Capture() {
             <p style={{ color: "#fff", fontSize: 13, padding: 24, textAlign: "center" }}>{t("cameraDenied")}</p>
           )}
           {cameraState === "idle" && <p style={{ color: "#fff", fontSize: 13 }}>…</p>}
+
+          {cameraState === "ready" && (
+            <>
+              <FrameGuideCorner vertical="top" horizontal="left" />
+              <FrameGuideCorner vertical="top" horizontal="right" />
+              <FrameGuideCorner vertical="bottom" horizontal="left" />
+              <FrameGuideCorner vertical="bottom" horizontal="right" />
+              <span
+                style={{
+                  position: "absolute",
+                  bottom: 12,
+                  left: "50%",
+                  transform: "translateX(-50%)",
+                  fontSize: 11,
+                  background: "rgba(0,0,0,0.5)",
+                  color: "#fff",
+                  padding: "4px 10px",
+                  borderRadius: 999,
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {t("captureFrameHint")}
+              </span>
+            </>
+          )}
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 20 }}>
@@ -128,20 +154,34 @@ export default function Capture() {
             }}
           />
 
-          <button
-            onClick={() => setInfoOpen(true)}
-            style={{
-              background: "none",
-              border: "none",
-              textDecoration: "underline",
-              fontSize: 13,
-              color: "var(--ar-ink)",
-              cursor: "pointer",
-              alignSelf: "center",
-            }}
-          >
-            {t("whatCanICapture")}
-          </button>
+          <div style={{ display: "flex", gap: 16, justifyContent: "center", flexWrap: "wrap" }}>
+            <button
+              onClick={() => setTipsOpen(true)}
+              style={{
+                background: "none",
+                border: "none",
+                textDecoration: "underline",
+                fontSize: 13,
+                color: "var(--ar-ink)",
+                cursor: "pointer",
+              }}
+            >
+              {t("captureTipsLabel")}
+            </button>
+            <button
+              onClick={() => setInfoOpen(true)}
+              style={{
+                background: "none",
+                border: "none",
+                textDecoration: "underline",
+                fontSize: 13,
+                color: "var(--ar-ink)",
+                cursor: "pointer",
+              }}
+            >
+              {t("whatCanICapture")}
+            </button>
+          </div>
 
           <div style={{ borderTop: "1px solid var(--ar-line)", paddingTop: 16, display: "flex", gap: 10 }}>
             <PrimaryButton onClick={() => fileInputRef.current?.click()} style={{ background: "#fff", color: "var(--ar-ink)", border: "1px solid var(--ar-line)" }}>
@@ -162,6 +202,41 @@ export default function Capture() {
       <Modal open={infoOpen} onClose={() => setInfoOpen(false)} title={t("captureInfoTitle")}>
         {t("captureInfoBody")}
       </Modal>
+
+      <Modal open={tipsOpen} onClose={() => setTipsOpen(false)} title={t("captureTipsTitle")}>
+        <ul style={{ margin: 0, paddingLeft: 18, display: "flex", flexDirection: "column", gap: 10 }}>
+          {["captureTip1", "captureTip2", "captureTip3", "captureTip4", "captureTip5"].map((key) => (
+            <li key={key}>{t(key)}</li>
+          ))}
+        </ul>
+      </Modal>
     </Screen>
+  );
+}
+
+// Corner-bracket framing guide, shown over the live viewfinder once the
+// camera is ready — the same "align your subject in this box" convention
+// as a QR/barcode scanner, here nudging toward the composition tips above
+// (fill the frame, shoot straight on) without blocking the shutter.
+function FrameGuideCorner({ vertical, horizontal }) {
+  const thickness = 3;
+  const edgeColor = "rgba(255,255,255,0.85)";
+  return (
+    <span
+      aria-hidden="true"
+      style={{
+        position: "absolute",
+        [vertical]: "10%",
+        [horizontal]: "10%",
+        width: 28,
+        height: 28,
+        borderTop: vertical === "top" ? `${thickness}px solid ${edgeColor}` : "none",
+        borderBottom: vertical === "bottom" ? `${thickness}px solid ${edgeColor}` : "none",
+        borderLeft: horizontal === "left" ? `${thickness}px solid ${edgeColor}` : "none",
+        borderRight: horizontal === "right" ? `${thickness}px solid ${edgeColor}` : "none",
+        borderRadius: 4,
+        pointerEvents: "none",
+      }}
+    />
   );
 }

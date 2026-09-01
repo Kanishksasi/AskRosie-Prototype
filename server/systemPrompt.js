@@ -72,7 +72,7 @@ export function buildSystemPrompt({ depthLevel, descriptiveMode, lang = "en", lo
     `  "confidence": "high" | "medium" | "low",`,
     `  "evidence": [{ "claim": string, "sourceLabel": string }],  // 0-3 items. sourceLabel MUST be copied verbatim from an approved source's label above (e.g. "Demo collection record") — never an index like "[1]", never the word "metadata" — or exactly "visual observation" for something plainly visible in the image`,
     `  "followUpQuestion": string | null,  // one short open-ended question back to the visitor, or null`,
-    `  "zoom": { "x": number, "y": number, "scale": number } | null  // ONLY when you reference a specific visual detail; x/y are 0-100 percent position in the image, scale is 1.3-2.4; null otherwise`,
+    `  "zoom": { "x": number, "y": number, "scale": number } | null  // REQUIRED (non-null) whenever "answer" names or describes a specific visual detail — a color, an object, a gesture, a section of the composition, anything a viewer could point at. x/y are 0-100 percent position of THAT detail in the image (not the image center — vary it per detail, e.g. "top-left corner" is roughly x:15,y:15, "bottom right" is roughly x:85,y:85), scale is 1.3-2.4 based on how small/precise the detail is. Use null ONLY when the answer is purely general or conceptual and points at nothing specific in the image.`,
     `}`,
   ];
 
@@ -84,7 +84,7 @@ export function buildSystemPrompt({ depthLevel, descriptiveMode, lang = "en", lo
 
   if (lookCloser) {
     lines.push(
-      `The visitor tapped "Look closer." Structure "answer" as four short labeled parts on their own lines: "Notice: ...", "Evidence: ...", "Interpretation: ...". Put the open question in "followUpQuestion" instead of repeating it in "answer."`
+      `The visitor tapped "Look closer." Structure "answer" as four short labeled parts on their own lines: "Notice: ...", "Evidence: ...", "Interpretation: ...". Put the open question in "followUpQuestion" instead of repeating it in "answer." This mode is specifically about examining ONE concrete visual detail — "zoom" is therefore REQUIRED here, never null: pick the single most interesting specific detail for "Notice" to point at, and set x/y to where THAT detail actually sits in the image (spread your choices across the whole image over a conversation — don't default to the middle every time).`
     );
   }
 

@@ -9,6 +9,12 @@ export function getUiTier(depthLevel) {
   return "standard"; // novice, casual, or no selection
 }
 
+// Confidence + sources used to default open for middle/standard/detailed
+// tiers, on the theory that older visitors benefit from seeing the
+// grounding by default. In practice that put two extra blocks under every
+// single reply — real clutter. Now every tier collapses them the same way,
+// behind one small toggle on the answer (see AssistantTurn in Chat.jsx);
+// the underlying transparency is unchanged, just opt-in instead of forced.
 export const TIER_CONFIG = {
   playful: {
     answerFontSize: 17,
@@ -17,14 +23,7 @@ export const TIER_CONFIG = {
     actionFontSize: 14,
     actionPadding: "10px 18px",
     inputFontSize: 16,
-    sourcesDefaultOpen: false,
-    confidenceVisible: false,
   },
-  // Grades 6-8: bigger and friendlier than the generic adult layout, but
-  // — unlike K-5 — middle schoolers benefit from seeing *why* Rosie said
-  // something (it's a critical-thinking skill the grade68 tone in
-  // systemPrompt.js explicitly leans into), so sources and confidence stay
-  // visible by default instead of tucked behind a toggle.
   middle: {
     answerFontSize: 15.5,
     answerLineHeight: 1.65,
@@ -32,8 +31,6 @@ export const TIER_CONFIG = {
     actionFontSize: 13,
     actionPadding: "8px 16px",
     inputFontSize: 15,
-    sourcesDefaultOpen: true,
-    confidenceVisible: true,
   },
   standard: {
     answerFontSize: 14,
@@ -42,8 +39,6 @@ export const TIER_CONFIG = {
     actionFontSize: 12,
     actionPadding: "6px 14px",
     inputFontSize: 14,
-    sourcesDefaultOpen: true,
-    confidenceVisible: true,
   },
   detailed: {
     answerFontSize: 13.5,
@@ -52,7 +47,5 @@ export const TIER_CONFIG = {
     actionFontSize: 12,
     actionPadding: "6px 14px",
     inputFontSize: 14,
-    sourcesDefaultOpen: true,
-    confidenceVisible: true,
   },
 };

@@ -22,9 +22,13 @@ export default function GradeSelect() {
   const { t, prefs, update } = useApp();
   const navigate = useNavigate();
 
+  // Selecting an option only records the preference and highlights the
+  // chip — it must NOT navigate on its own. Only "Continue" (or "Skip")
+  // below moves to the next screen, so a visitor can actually look at
+  // their choice, change their mind, or read the other options first
+  // instead of being bounced to the next page the instant they tap.
   function choose(id) {
     update({ depthLevel: id });
-    navigate("/disclaimer");
   }
 
   return (

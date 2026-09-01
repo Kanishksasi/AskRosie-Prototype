@@ -10,12 +10,12 @@ research brief (`crystal-bridges-ask-rosie-prototype-research.md`), it still
 avoids their actual collection data, brand assets, and any
 live/undocumented API — it's a self-contained build with its own small
 hand-written demo dataset (fictional titles/artists), not a scrape or clone
-of their real content. Most demo pieces are paired with a real,
+of their real content. Every demo piece is paired with a real,
 thematically-matching public-domain image (Art Institute of Chicago's open
 API, CC0) as a visual stand-in, credited on-screen — see `src/data/artworks.js`.
-A couple of pieces still show the original gradient placeholder where a
-suitable image wasn't sourced yet; `ArtworkArt` falls back to it
-automatically if an image is ever missing or fails to load.
+`ArtworkArt` still falls back to a gradient placeholder automatically if an
+image is ever missing or fails to load, so a broken/renamed file degrades
+gracefully instead of showing a broken-image icon.
 
 **If this ever moves beyond a direct pitch** (public repo, distributed
 demo, shown to anyone outside Crystal Bridges), revisit the naming —

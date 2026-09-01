@@ -1,0 +1,14 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+  functions = "netlify/functions"
+
+# HashRouter means every real route lives under the "#" fragment, which the
+# server never sees — so every path Netlify's static server is asked for
+# should just serve index.html and let the client-side router take it from
+# there. (The /api/* functions above are matched first via their own
+# config.path binding, before this catch-all applies.)
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

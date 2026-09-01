@@ -37,21 +37,51 @@ function loadVisionModule() {
   return visionModulePromise;
 }
 
+// WebGazer's own showVideoPreview(false) sets the video element's CSS
+// display to "none" on every browser except Firefox (confirmed by reading
+// its source — it special-cases Firefox to use opacity instead, precisely
+// because display:none is known to be risky elsewhere). On iOS Safari in
+// particular, a display:none <video> stops decoding frames entirely, which
+// would silently freeze BOTH WebGazer's own gaze estimation and this
+// hook's blink detection at once — the two of them share this one video
+// feed. So we never call showVideoPreview(false): instead the video stays
+// display:block (still actively decoding) and we hide it ourselves with
+// styles that don't stop rendering — tiny, transparent, pinned off in a
+// corner, unclickable.
+function concealVideoFeed() {
+  const conceal = (el) => {
+    if (!el) return;
+    Object.assign(el.style, {
+      position: "fixed",
+      top: "0",
+      left: "0",
+      width: "2px",
+      height: "2px",
+      opacity: "0",
+      pointerEvents: "none",
+      overflow: "hidden",
+    });
+  };
+  conceal(document.getElementById("webgazerVideoFeed"));
+  conceal(document.getElementById("webgazerVideoContainer"));
+}
+
 // Experimental, opt-in, webcam-based head pointer — modeled on Apple's Head
 // Pointer accessibility feature, but driven by gaze instead of head
 // position: `gaze` is where the pointer should sit, and `blinkSignal`
 // increments once per detected blink (both eyes closing together), the
 // same "camera-based switch" trigger Apple's Switch Control offers for
 // clicking without a mouse. Approximate, browser-based estimation — not
-// clinical-grade tracking. Fails closed: any load/permission error just
-// leaves gaze/blink inert and reports status "error".
+// clinical-grade tracking.
 //
-// Blink detection reuses WebGazer's own webcam stream (via its injected
-// <video id="webgazerVideoFeed">) instead of requesting camera access a
-// second time — MediaPipe only needs a video element to read frames from,
-// it doesn't need to own the stream.
+// Gaze (WebGazer) and blink (MediaPipe FaceLandmarker, reusing WebGazer's
+// video feed instead of requesting the camera a second time) are
+// deliberately supervised as two INDEPENDENT pipelines: `status` reflects
+// gaze alone, so a MediaPipe failure (unsupported WASM/WebGL, blocked
+// model download, whatever) only costs blink-clicking, not the whole
+// pointer — degrading gracefully instead of an all-or-nothing failure.
 export function useEyeTracking(enabled) {
-  const [status, setStatus] = useState("idle"); // idle | loading | ready | error
+  const [status, setStatus] = useState("idle"); // idle | loading | ready | denied | error
   const [gaze, setGaze] = useState(null);
   const [blinkSignal, setBlinkSignal] = useState(0);
   const gazerRef = useRef(null);
@@ -81,10 +111,10 @@ export function useEyeTracking(enabled) {
     let cancelled = false;
     setStatus("loading");
 
-    Promise.all([loadWebgazer(), loadVisionModule()])
-      .then(async ([webgazer, { FaceLandmarker, FilesetResolver }]) => {
+    // --- Gaze pipeline (required) ---
+    loadWebgazer()
+      .then(async (webgazer) => {
         if (cancelled) return;
-
         webgazer
           .setRegression("ridge")
           .setGazeListener((data) => {
@@ -95,50 +125,74 @@ export function useEyeTracking(enabled) {
 
         await webgazer.begin();
         if (cancelled) return;
-        webgazer.showVideoPreview(false).showPredictionPoints(false);
+        // Deliberately NOT showVideoPreview(false) — see concealVideoFeed().
+        webgazer.showVideoPreview(true).showPredictionPoints(false);
+        concealVideoFeed();
         gazerRef.current = webgazer;
-
-        const filesetResolver = await FilesetResolver.forVisionTasks(`${TASKS_VISION_CDN}/wasm`);
-        const landmarker = await FaceLandmarker.createFromOptions(filesetResolver, {
-          baseOptions: { modelAssetPath: FACE_LANDMARKER_MODEL, delegate: "GPU" },
-          outputFaceBlendshapes: true,
-          runningMode: "VIDEO",
-        });
-        if (cancelled) {
-          landmarker.close();
-          return;
-        }
-        landmarkerRef.current = landmarker;
         setStatus("ready");
 
-        const detectLoop = () => {
-          if (cancelled) return;
-          const videoEl = document.getElementById("webgazerVideoFeed");
-          if (!videoEl || videoEl.readyState < 2) {
-            rafRef.current = requestAnimationFrame(detectLoop);
+        // --- Blink pipeline (best-effort, doesn't affect `status`) ---
+        try {
+          const { FaceLandmarker, FilesetResolver } = await loadVisionModule();
+          const filesetResolver = await FilesetResolver.forVisionTasks(`${TASKS_VISION_CDN}/wasm`);
+          const landmarker = await FaceLandmarker.createFromOptions(filesetResolver, {
+            // CPU, not GPU: WebGazer already runs its own GPU-backed face
+            // model against this same camera feed. Two simultaneous WebGL
+            // consumers can exhaust a browser's (especially mobile's)
+            // limited context budget and silently lose one — CPU avoids
+            // that contention entirely; blink detection doesn't need
+            // video framerate to feel responsive.
+            baseOptions: { modelAssetPath: FACE_LANDMARKER_MODEL, delegate: "CPU" },
+            outputFaceBlendshapes: true,
+            runningMode: "VIDEO",
+          });
+          if (cancelled) {
+            landmarker.close();
             return;
           }
-          const result = landmarker.detectForVideo(videoEl, performance.now());
-          const shapes = result?.faceBlendshapes?.[0]?.categories;
-          if (shapes) {
-            const left = shapes.find((c) => c.categoryName === "eyeBlinkLeft")?.score ?? 0;
-            const right = shapes.find((c) => c.categoryName === "eyeBlinkRight")?.score ?? 0;
-            const eyesClosed = left > BLINK_THRESHOLD && right > BLINK_THRESHOLD;
-            const now = performance.now();
-            // Fire on the closing edge only, not for every frame the eyes
-            // stay shut, so a single blink is exactly one click.
-            if (eyesClosed && !eyesClosedRef.current && now - lastBlinkAtRef.current > BLINK_COOLDOWN_MS) {
-              lastBlinkAtRef.current = now;
-              setBlinkSignal((n) => n + 1);
+          landmarkerRef.current = landmarker;
+
+          const detectLoop = () => {
+            if (cancelled) return;
+            const videoEl = document.getElementById("webgazerVideoFeed");
+            if (!videoEl || videoEl.readyState < 2) {
+              rafRef.current = requestAnimationFrame(detectLoop);
+              return;
             }
-            eyesClosedRef.current = eyesClosed;
-          }
+            const result = landmarker.detectForVideo(videoEl, performance.now());
+            const shapes = result?.faceBlendshapes?.[0]?.categories;
+            if (shapes) {
+              const left = shapes.find((c) => c.categoryName === "eyeBlinkLeft")?.score ?? 0;
+              const right = shapes.find((c) => c.categoryName === "eyeBlinkRight")?.score ?? 0;
+              const eyesClosed = left > BLINK_THRESHOLD && right > BLINK_THRESHOLD;
+              const now = performance.now();
+              // Fire on the closing edge only, not for every frame the
+              // eyes stay shut, so a single blink is exactly one click.
+              if (eyesClosed && !eyesClosedRef.current && now - lastBlinkAtRef.current > BLINK_COOLDOWN_MS) {
+                lastBlinkAtRef.current = now;
+                setBlinkSignal((n) => n + 1);
+              }
+              eyesClosedRef.current = eyesClosed;
+            }
+            rafRef.current = requestAnimationFrame(detectLoop);
+          };
           rafRef.current = requestAnimationFrame(detectLoop);
-        };
-        rafRef.current = requestAnimationFrame(detectLoop);
+        } catch (err) {
+          // Gaze pointer keeps working; blink-clicking just won't fire.
+          // Logged (not surfaced in the UI) so this is diagnosable without
+          // pretending the whole feature failed.
+          console.error("Eye-tracking: blink detection failed to start, gaze pointer still active.", err);
+        }
       })
-      .catch(() => {
-        if (!cancelled) setStatus("error");
+      .catch((err) => {
+        console.error("Eye-tracking: failed to start.", err);
+        if (cancelled) return;
+        // A denied/blocked camera permission is by far the most common
+        // real-world failure, and the fix is different from every other
+        // failure mode (a browser site-setting, not something a reload
+        // fixes) — worth its own status so the UI can say that plainly
+        // instead of a generic "something went wrong."
+        setStatus(err?.name === "NotAllowedError" ? "denied" : "error");
       });
 
     return () => {
