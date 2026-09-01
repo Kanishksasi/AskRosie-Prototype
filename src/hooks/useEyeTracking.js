@@ -98,6 +98,7 @@ export function useEyeTracking(enabled) {
   const rafRef = useRef(null);
   const lastBlinkAtRef = useRef(0);
   const eyesClosedRef = useRef(false);
+  const smoothedGazeRef = useRef(null);
 
   useEffect(() => {
     if (!enabled) {
@@ -112,6 +113,7 @@ export function useEyeTracking(enabled) {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
       landmarkerRef.current?.close?.();
       landmarkerRef.current = null;
+      smoothedGazeRef.current = null;
       setStatus("idle");
       setGaze(null);
       return;
@@ -129,7 +131,19 @@ export function useEyeTracking(enabled) {
           .setRegression("ridge")
           .setGazeListener((data) => {
             if (!data || cancelled) return;
-            setGaze({ x: data.x, y: data.y });
+            // WebGazer's own Kalman filter is already on by default, but a
+            // single-webcam gaze estimate is still noisy frame to frame —
+            // an exponential moving average on top visibly settles the
+            // pointer instead of it hopping around between predictions.
+            // Weighted toward the previous position (0.6) so it reads as
+            // smooth cursor motion rather than a twitchy dot, while still
+            // catching up within a few frames of a real gaze shift.
+            const prev = smoothedGazeRef.current;
+            const next = prev
+              ? { x: prev.x * 0.6 + data.x * 0.4, y: prev.y * 0.6 + data.y * 0.4 }
+              : { x: data.x, y: data.y };
+            smoothedGazeRef.current = next;
+            setGaze(next);
           })
           .saveDataAcrossSessions(false);
 

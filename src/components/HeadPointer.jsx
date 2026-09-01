@@ -14,7 +14,7 @@ import { useApp } from "../context/AppContext.jsx";
 // everything else on screen.
 export default function HeadPointer() {
   const { prefs, eyeTracking } = useApp();
-  const { gaze, blinkSignal } = eyeTracking;
+  const { gaze, blinkSignal, calibrate } = eyeTracking;
   const dotRef = useRef(null);
   const lastFiredRef = useRef(0);
 
@@ -24,7 +24,24 @@ export default function HeadPointer() {
 
     // pointerEvents:none on the dot means elementFromPoint always resolves
     // to whatever is actually underneath it, never the dot itself.
-    document.elementFromPoint(gaze.x, gaze.y)?.click();
+    const target = document.elementFromPoint(gaze.x, gaze.y);
+    target?.click();
+
+    // Continuous self-calibration: a successful blink-click on a real,
+    // reasonably-sized UI element is a much better ground-truth signal
+    // than the raw gaze reading that triggered it — the user was
+    // presumably aiming at that element, not at wherever the model
+    // currently thinks their eyes are. Feeding its center back into the
+    // regression lets accuracy keep improving during ordinary use instead
+    // of only during the one-time calibration screen. Skip oversized
+    // targets (a page wrapper, <body>) — their center isn't a meaningful
+    // "the user was looking exactly here" signal.
+    if (target) {
+      const rect = target.getBoundingClientRect();
+      if (rect.width > 0 && rect.width < 300 && rect.height > 0 && rect.height < 150) {
+        calibrate([{ x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 }]);
+      }
+    }
 
     const dot = dotRef.current;
     if (dot) {
@@ -32,7 +49,7 @@ export default function HeadPointer() {
       void dot.offsetWidth; // restart the animation even on rapid repeat blinks
       dot.classList.add("ar-head-pointer-blink");
     }
-  }, [blinkSignal, gaze]);
+  }, [blinkSignal, gaze, calibrate]);
 
   if (!prefs.eyeTracking || !gaze) return null;
 
