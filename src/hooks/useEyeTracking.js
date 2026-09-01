@@ -1,6 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 const WEBGAZER_SRC = "https://webgazer.cs.brown.edu/webgazer.js";
+// WebGazer's own default (`faceMeshSolutionPath: "./mediapipe/face_mesh"`)
+// is relative to the CURRENT PAGE's origin, not webgazer.js's own CDN —
+// meaning on any domain other than webgazer.cs.brown.edu itself, it tries
+// to fetch its face-mesh model from a path this app doesn't have. That 404
+// gets caught by the SPA fallback route and returns index.html instead,
+// which the browser then tries to parse as JS ("Unexpected token '<'"),
+// leaving webgazer's internal state broken and .begin() throwing. Pointing
+// it at MediaPipe's real, absolute CDN location fixes this on every host.
+const FACE_MESH_SOLUTION_PATH = "https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4.1657299874";
 const TASKS_VISION_CDN = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14";
 const FACE_LANDMARKER_MODEL =
   "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task";
@@ -115,6 +124,7 @@ export function useEyeTracking(enabled) {
     loadWebgazer()
       .then(async (webgazer) => {
         if (cancelled) return;
+        if (webgazer.params) webgazer.params.faceMeshSolutionPath = FACE_MESH_SOLUTION_PATH;
         webgazer
           .setRegression("ridge")
           .setGazeListener((data) => {
