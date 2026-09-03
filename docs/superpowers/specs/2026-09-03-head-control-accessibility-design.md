@@ -146,32 +146,13 @@ window.webkitSpeechRecognition`:
   toggled by a small "abc" button next to the mic.
 - Chat only (the sole visitor-facing free-text field).
 
-### 4. Grade select: independent groups + primary/context  (`pages/GradeSelect.jsx`, `pages/Settings.jsx`, `context/AppContext.jsx`, `lib/api.js`, `server/systemPrompt.js`, `server/groqChat.js`)
+### 4. Grade select — no change
 
-**State.** Add `prefs.levelSelections = { student: id|null, adult: id|null,
-teacher: id|null }`. `prefs.depthLevel` stays as the **primary** — the id of the
-most recently tapped option in any group — so everything downstream
-(`getUiTier`, the existing prompt tone) keeps working unchanged.
-
-**GradeSelect screen.** Each `LevelGroup` reads/writes only its own slot.
-Tapping an option: sets that group's slot and sets `depthLevel` to that id (now
-primary). The chip matching `depthLevel` gets a "Primary" marker; other selected
-chips (in other groups) show a lighter "also selected" state. "Continue" persists
-as-is; "Skip" clears all slots and `depthLevel`.
-
-**Prompt context.** `askRosie` gains `depthLevelExtras` — the non-null
-`levelSelections` values that aren't the primary. Server appends one line to the
-system prompt:
-
-> `Additional visitor context: they also identified as {descriptions}. Blend this in where useful (e.g. a teacher who also wants expert-level depth).`
-
-using a `LEVEL_DESCRIPTION` map on the server (`k5` → "an early-elementary
-student", `teacher` → "a teacher or chaperone leading a student group", etc.).
-Primary tone selection is unchanged.
-
-**Settings.** The flat grade chip row keeps single-select: choosing one sets it
-as primary and resets `levelSelections` to just that slot. (Keeping the nuanced
-multi-pick to the onboarding screen only — Settings stays a quick override.)
+> **Superseded.** An earlier revision of this spec made the three grade groups
+> independently selectable with a primary/context model. That was reverted (see
+> commit "Revert grade select to a single choice"): the screen stays one pick
+> total across all groups, sharing a single `prefs.depthLevel`, exactly as it was
+> before this work. No `levelSelections`, no `depthLevelExtras`.
 
 ### 5. Slider steppers  (`pages/Settings.jsx`)
 
