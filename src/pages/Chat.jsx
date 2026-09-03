@@ -124,7 +124,10 @@ export default function Chat() {
         artworkContext: artwork || null,
       });
 
-      if (reply.zoom) {
+      // Never auto-zoom on the opening greeting — landing on a freshly
+      // scaled-up image reads as "the page is zoomed in." Only zoom in
+      // response to an actual question or Look-closer.
+      if (reply.zoom && !kickoff) {
         // Clear any still-pending timeout from a previous zoom first — two
         // zoom-triggering replies within 4.2s of each other would otherwise
         // let the OLDER timeout null out the NEWER zoom mid-display.

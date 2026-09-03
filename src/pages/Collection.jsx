@@ -5,7 +5,7 @@ import { fetchArtworks } from "../data/artworks.js";
 import { Screen, Header, ArtworkArt } from "../components/ui.jsx";
 
 export default function Collection() {
-  const { t } = useApp();
+  const { t, prefs } = useApp();
   const navigate = useNavigate();
   const artworks = fetchArtworks();
 
@@ -37,17 +37,41 @@ export default function Collection() {
           <FilterInput label={t("filterMedium")} value={medium} onChange={setMedium} placeholder={t("filterMediumPlaceholder")} />
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))", gap: 16 }}>
+        <div
+          style={{
+            display: "grid",
+            // Head-pointer users get one big target per row; everyone else
+            // gets the responsive grid.
+            gridTemplateColumns: prefs.eyeTracking ? "1fr" : "repeat(auto-fill, minmax(150px, 1fr))",
+            gap: 14,
+          }}
+        >
           {filtered.map((a) => (
             <button
               key={a.id}
               onClick={() => navigate(`/chat/${a.id}`)}
-              style={{ background: "none", border: "none", textAlign: "left", cursor: "pointer", padding: 0 }}
+              style={{
+                background: "#fff",
+                border: "1px solid var(--ar-line)",
+                borderRadius: 16,
+                textAlign: "left",
+                cursor: "pointer",
+                padding: 8,
+                display: prefs.eyeTracking ? "flex" : "block",
+                gap: 12,
+                alignItems: "center",
+              }}
             >
-              <ArtworkArt artwork={a} height={140} radius={14} />
-              <div style={{ marginTop: 8, fontSize: 13, fontWeight: 600, color: "var(--ar-ink)" }}>{a.title}</div>
-              <div style={{ fontSize: 12, color: "#666" }}>
-                {a.artist} · {a.year}
+              <div style={{ flex: prefs.eyeTracking ? "0 0 120px" : "auto" }}>
+                <ArtworkArt artwork={a} height={prefs.eyeTracking ? 90 : 140} radius={12} />
+              </div>
+              <div>
+                <div style={{ marginTop: prefs.eyeTracking ? 0 : 8, fontSize: 13, fontWeight: 600, color: "var(--ar-ink)" }}>
+                  {a.title}
+                </div>
+                <div style={{ fontSize: 12, color: "#666" }}>
+                  {a.artist} · {a.year}
+                </div>
               </div>
             </button>
           ))}
