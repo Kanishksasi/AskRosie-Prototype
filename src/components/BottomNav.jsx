@@ -42,15 +42,18 @@ export default function BottomNav() {
           to={item.to}
           style={({ isActive }) => ({
             display: "flex",
+            flex: 1,
             flexDirection: "column",
             alignItems: "center",
+            justifyContent: "center",
             gap: 6,
+            minHeight: 48,
             fontSize: 12,
             fontWeight: isActive ? 700 : 500,
             letterSpacing: 0.2,
             textDecoration: "none",
             color: isActive ? "var(--ar-maroon)" : "#888",
-            padding: "4px 14px",
+            padding: "6px 8px",
           })}
         >
           {({ isActive }) => (
