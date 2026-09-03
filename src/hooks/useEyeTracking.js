@@ -13,35 +13,35 @@ const LEFT_EYE_OUTER = 33;
 const RIGHT_EYE_OUTER = 263;
 
 // A blink is "both eyes' blendshape score crosses this" — MediaPipe's
-// documented rule of thumb for a genuine blink on an average face. Taking
-// the *lower* of the two eye scores means one twitching eye alone can't
-// trigger it.
-const BLINK_THRESHOLD = 0.55;
+// A closure only counts as a real blink (not an eye flutter or a landmark
+// glitch) if the score PEAKS above this at some point while the eyes are
+// shut. Uses the average of the two eyes so a slightly lazy eye — very
+// common — doesn't block every click.
+const BLINK_CONFIRM_PEAK = 0.5;
 // The eyelids start moving — and the eye-corner landmarks start drifting —
-// well before the blendshape score reaches BLINK_THRESHOLD. From this
-// lower score on, the pointer is frozen in place so it can't lurch (almost
-// always downward) at the exact instant of a click.
-const BLINK_FREEZE_ENTER = 0.3;
+// as soon as the score lifts off zero. From this low score on, the pointer
+// freezes in place and the blink's clock starts, so it can't lurch (almost
+// always downward) at the instant of a click and so even a quick blink is
+// timed from its true start.
+const BLINK_FREEZE_ENTER = 0.22;
 // Keep the pointer frozen this long after the eyes reopen, too — the
 // landmarks take a few frames to resettle once the lids are back up.
-const FREEZE_RELEASE_MS = 280;
-// The click is registered at wherever the pointer was this many ms before
-// the blink began, read from a short position history — not the live
-// reading, which by click time has been frozen (and was drifting just
-// before the freeze kicked in).
-const PRE_BLINK_LOOKBACK_MS = 200;
-// Deliberate vs. reflex: a reflex blink is ~100-150ms of eyes-closed; a
-// deliberate "click" blink is a distinct, longer squeeze. Only closures
-// in the [CLICK_MIN, CLICK_MAX] band count as a click. Holding the eyes
-// shut past RECENTER_HOLD is the one hands-free maintenance gesture —
-// it re-centers the pointer. The gap between CLICK_MAX and RECENTER_HOLD
-// is a dead band so the two gestures can't be confused.
-const CLICK_MIN_MS = 280;
-const CLICK_MAX_MS = 900;
-const RECENTER_HOLD_MS = 1200;
-// Minimum gap between registered clicks, measured from the previous
-// click. Long enough that one slow blink can't double-fire.
-const BLINK_COOLDOWN_MS = 700;
+const FREEZE_RELEASE_MS = 250;
+// The click lands wherever the pointer was aimed the instant the blink
+// began (captured on the closing edge, with this tiny extra look-back to
+// cover a fast frame-to-frame transition) — never the live reading, which
+// by click time is frozen and was already drifting.
+const PRE_BLINK_LOOKBACK_MS = 90;
+// A click is any deliberate blink from CLICK_MIN_MS up to RECENTER_HOLD_MS
+// of eyes-closed — "a normal blink, held a touch longer." There is no
+// upper dead band: a click blink that runs long still clicks. Holding
+// clearly longer (past RECENTER_HOLD_MS) re-centers the pointer instead —
+// the one hands-free maintenance gesture.
+const CLICK_MIN_MS = 190;
+const RECENTER_HOLD_MS = 1500;
+// Minimum gap between registered clicks. Short enough that if the first
+// try doesn't land, a second blink right after still counts.
+const BLINK_COOLDOWN_MS = 380;
 // No face in frame for this long → status flips to "lost" so the UI can
 // say "move back into view" instead of leaving a silently frozen pointer.
 const FACE_LOST_MS = 1000;
@@ -130,7 +130,8 @@ export function useEyeTracking(enabled) {
   const rafRef = useRef(null);
   const lastBlinkAtRef = useRef(0);
   const eyesClosedRef = useRef(false);
-  const blinkStartRef = useRef(0); // performance.now() when the deliberate closure began
+  const blinkStartRef = useRef(0); // performance.now() when the closure began (score lifted off zero)
+  const blinkPeakRef = useRef(0); // highest blink score seen during the current closure
   const neutralRef = useRef(null); // {x,y} normalized head-center at "forward"
   const biasRef = useRef({ x: 0, y: 0 }); // screen-space drift correction
   const smoothedRef = useRef(null); // last smoothed screen point
@@ -291,50 +292,51 @@ export function useEyeTracking(enabled) {
           if (shapes) {
             const left = shapes.find((c) => c.categoryName === "eyeBlinkLeft")?.score ?? 0;
             const right = shapes.find((c) => c.categoryName === "eyeBlinkRight")?.score ?? 0;
-            const blinkScore = Math.min(left, right); // both eyes → gate on the lower one
+            // Average of the two eyes, not the minimum — one slightly lazy
+            // eye shouldn't swallow every click.
+            const blinkScore = (left + right) / 2;
+            const closing = blinkScore > BLINK_FREEZE_ENTER;
 
-            if (blinkScore > BLINK_FREEZE_ENTER) {
+            if (closing) {
               freezeUntilRef.current = now + FREEZE_RELEASE_MS;
-            }
 
-            const closed = blinkScore > BLINK_THRESHOLD;
-
-            // Closing edge: mark the start, and snapshot where the pointer
-            // was aimed a beat earlier — before the freeze, before any
-            // eyelid-driven landmark drift.
-            if (closed && !eyesClosedRef.current) {
-              blinkStartRef.current = now;
-              preBlinkPointRef.current =
-                historyPointAt(historyRef.current, now - PRE_BLINK_LOOKBACK_MS) || smoothedRef.current;
-            }
-
-            // Opening edge: classify by how long the eyes were shut.
-            if (!closed && eyesClosedRef.current) {
-              const dur = now - blinkStartRef.current;
-              if (dur >= RECENTER_HOLD_MS) {
-                neutralRef.current = null;
-                biasRef.current = { x: 0, y: 0 };
-                historyRef.current = [];
-                freezeUntilRef.current = now + 400; // let the new center settle
-                setRecenterSignal((n) => n + 1);
-              } else if (
-                dur >= CLICK_MIN_MS &&
-                dur <= CLICK_MAX_MS &&
-                now - lastBlinkAtRef.current > BLINK_COOLDOWN_MS
-              ) {
-                lastBlinkAtRef.current = now;
-                const p = preBlinkPointRef.current || smoothedRef.current;
-                blinkPointRef.current = p;
-                lastPointerRef.current = p; // correctToward should measure error from the aimed point
-                setBlinkSignal((n) => n + 1);
+              // Rising edge of a closure: start the clock and snapshot the
+              // aim point NOW, before the eyelids have moved the landmarks.
+              if (!eyesClosedRef.current) {
+                blinkStartRef.current = now;
+                blinkPeakRef.current = blinkScore;
+                preBlinkPointRef.current =
+                  historyPointAt(historyRef.current, now - PRE_BLINK_LOOKBACK_MS) || smoothedRef.current;
+              } else {
+                blinkPeakRef.current = Math.max(blinkPeakRef.current, blinkScore);
               }
-              // <CLICK_MIN (reflex) and the CLICK_MAX..RECENTER dead band: ignored
+            } else if (eyesClosedRef.current) {
+              // Falling edge: the closure ended. Classify it — but only if
+              // the eyes actually closed hard enough at some point for it
+              // to be a real blink and not landmark noise.
+              const dur = now - blinkStartRef.current;
+              if (blinkPeakRef.current >= BLINK_CONFIRM_PEAK) {
+                if (dur >= RECENTER_HOLD_MS) {
+                  neutralRef.current = null;
+                  biasRef.current = { x: 0, y: 0 };
+                  historyRef.current = [];
+                  freezeUntilRef.current = now + 400; // let the new center settle
+                  setRecenterSignal((n) => n + 1);
+                } else if (dur >= CLICK_MIN_MS && now - lastBlinkAtRef.current > BLINK_COOLDOWN_MS) {
+                  lastBlinkAtRef.current = now;
+                  const p = preBlinkPointRef.current || smoothedRef.current;
+                  blinkPointRef.current = p;
+                  lastPointerRef.current = p; // correctToward measures error from the aimed point
+                  setBlinkSignal((n) => n + 1);
+                }
+                // dur < CLICK_MIN_MS: a reflex blink — ignored
+              }
             }
-            eyesClosedRef.current = closed;
+            eyesClosedRef.current = closing;
 
             // Charging indicator for the pointer ring. Only push state on a
             // meaningful change so an open, steady eye adds no renders.
-            const charge = closed ? now - blinkStartRef.current : 0;
+            const charge = closing ? now - blinkStartRef.current : 0;
             if (Math.abs(charge - lastChargeRef.current) > 40 || (charge === 0) !== (lastChargeRef.current === 0)) {
               lastChargeRef.current = charge;
               setBlinkCharge(charge);

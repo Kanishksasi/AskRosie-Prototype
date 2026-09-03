@@ -139,6 +139,20 @@ a {
   border-radius: 4px;
 }
 
+/* Brief flash on the element a blink-click just landed on — confirmation
+   that the click registered. */
+.ar-head-clicked {
+  animation: ar-head-clicked-flash 320ms ease-out;
+}
+@keyframes ar-head-clicked-flash {
+  0% {
+    box-shadow: 0 0 0 0 rgba(81, 30, 17, 0.55);
+  }
+  100% {
+    box-shadow: 0 0 0 14px rgba(81, 30, 17, 0);
+  }
+}
+
 /* "No face in frame" hint — replaces the old silent frozen pointer. */
 .ar-head-lost {
   position: fixed;

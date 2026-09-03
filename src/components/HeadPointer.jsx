@@ -15,6 +15,24 @@ import { useApp } from "../context/AppContext.jsx";
 // everything else on screen.
 const INTERACTIVE = 'a, button, [role="button"], input, select, textarea, label, [tabindex]';
 
+// The interactive element at (x,y), or — if the point just missed one —
+// the nearest interactive element within a small sweep. The pointer is
+// only ever approximately where the user meant, so a near miss should
+// still land.
+function resolveTarget(x, y) {
+  const direct = document.elementFromPoint(x, y)?.closest?.(INTERACTIVE);
+  if (direct) return direct;
+  for (const r of [12, 22, 32]) {
+    for (const [ox, oy] of [
+      [0, -r], [0, r], [-r, 0], [r, 0], [-r, -r], [r, -r], [-r, r], [r, r],
+    ]) {
+      const el = document.elementFromPoint(x + ox, y + oy)?.closest?.(INTERACTIVE);
+      if (el) return el;
+    }
+  }
+  return null;
+}
+
 export default function HeadPointer() {
   const { prefs, eyeTracking, dwellScroll, t } = useApp();
   const { gaze, blinkSignal, blinkPoint, blinkCharge, correctToward, status, clickHoldMs, recenterHoldMs, recenterSignal } = eyeTracking;
@@ -41,22 +59,26 @@ export default function HeadPointer() {
     const point = blinkPoint || gaze;
     if (!point) return;
 
-    // pointerEvents:none on the dot means elementFromPoint always resolves
-    // to whatever is actually underneath it, never the dot itself.
-    const target = document.elementFromPoint(point.x, point.y);
-    target?.click();
+    // Resolve to a real interactive element. If the exact point isn't on
+    // one (it landed in a gap, or a pixel outside a small target), sweep a
+    // few nearby offsets before giving up — the pointer is only ever
+    // approximately where the user meant.
+    const hit = resolveTarget(point.x, point.y);
+    if (!hit) return;
 
-    // Continuous drift correction: a successful blink-click on a real,
-    // reasonably-sized UI element is a confirmed "the user meant exactly
-    // here" signal — nudge the pointer's offset toward that element's
+    hit.click();
+
+    // Brief flash so the user can see the click landed.
+    hit.classList.add("ar-head-clicked");
+    setTimeout(() => hit.classList.remove("ar-head-clicked"), 320);
+
+    // Continuous drift correction: a confirmed "the user meant exactly
+    // here" signal — nudge the pointer's offset toward the element's
     // center so accuracy keeps improving during ordinary use. Skip
-    // oversized targets (a page wrapper, <body>) — their center isn't a
-    // meaningful "aimed here" signal.
-    if (target) {
-      const rect = target.getBoundingClientRect();
-      if (rect.width > 0 && rect.width < 300 && rect.height > 0 && rect.height < 150) {
-        correctToward([{ x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 }]);
-      }
+    // oversized targets (a page wrapper, <body>).
+    const rect = hit.getBoundingClientRect();
+    if (rect.width > 0 && rect.width < 320 && rect.height > 0 && rect.height < 160) {
+      correctToward([{ x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 }]);
     }
 
     const dot = dotRef.current;
@@ -67,12 +89,12 @@ export default function HeadPointer() {
     }
   }, [blinkSignal, blinkPoint, gaze, scrolling, correctToward]);
 
-  // Highlight whatever interactive element the pointer is currently over,
-  // so the user can see what a blink will hit before committing to it.
+  // Highlight the interactive element a blink would hit right now (same
+  // near-miss resolution as the click itself), so the user can see the
+  // target before committing.
   useEffect(() => {
     if (!gaze) return;
-    const el = document.elementFromPoint(gaze.x, gaze.y);
-    const target = el?.closest?.(INTERACTIVE) || null;
+    const target = resolveTarget(gaze.x, gaze.y);
     if (target === haloRef.current) return;
     haloRef.current?.classList.remove("ar-head-target");
     if (target) target.classList.add("ar-head-target");
@@ -110,15 +132,16 @@ export default function HeadPointer() {
                 position: "absolute",
                 left: "50%",
                 top: "50%",
-                width: 40,
-                height: 40,
-                marginLeft: -20,
-                marginTop: -20,
+                width: 44,
+                height: 44,
+                marginLeft: -22,
+                marginTop: -22,
                 borderRadius: "50%",
-                border: `3px solid ${recentering ? "var(--ar-teal)" : arming ? "var(--ar-maroon)" : "rgba(81,30,17,0.4)"}`,
-                transform: `scale(${0.5 + chargeFrac * 0.9})`,
-                opacity: recentering ? 1 : 0.4 + chargeFrac * 0.6,
-                transition: "transform 60ms linear, opacity 60ms linear",
+                border: `3px solid ${recentering ? "var(--ar-teal)" : arming ? "var(--ar-maroon)" : "rgba(81,30,17,0.45)"}`,
+                background: arming && !recentering ? "rgba(81,30,17,0.18)" : "transparent",
+                transform: `scale(${arming ? 1 : 0.55 + chargeFrac * 0.45})`,
+                opacity: recentering ? 1 : arming ? 1 : 0.45 + chargeFrac * 0.55,
+                transition: "transform 50ms linear, opacity 50ms linear",
               }}
             />
           )}
@@ -129,8 +152,13 @@ export default function HeadPointer() {
               width: 28,
               height: 28,
               borderRadius: "50%",
-              border: "2px solid var(--ar-maroon)",
-              background: "rgba(81, 30, 17, 0.15)",
+              border: `2px solid ${recentering ? "var(--ar-teal)" : "var(--ar-maroon)"}`,
+              background: recentering
+                ? "var(--ar-teal)"
+                : arming
+                ? "var(--ar-maroon)"
+                : "rgba(81, 30, 17, 0.15)",
+              transition: "background 60ms linear",
             }}
           />
         </div>
