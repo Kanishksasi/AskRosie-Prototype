@@ -117,9 +117,6 @@ export default function Chat() {
         messages: [...history, { role: "user", content: prompt }],
         image: isCustom ? capturedImage : null,
         depthLevel: prefs.depthLevel,
-        depthLevelExtras: Object.values(prefs.levelSelections || {}).filter(
-          (v) => v && v !== prefs.depthLevel
-        ),
         descriptiveMode: prefs.descriptiveMode,
         lang: prefs.lang,
         lookCloser,

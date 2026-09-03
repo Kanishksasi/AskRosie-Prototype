@@ -97,7 +97,6 @@ export async function runChat({
   messages = [],
   image,
   depthLevel,
-  depthLevelExtras,
   descriptiveMode,
   lang,
   lookCloser,
@@ -111,7 +110,7 @@ export async function runChat({
     return { ok: false, status: 400, error: "messages is required" };
   }
 
-  const systemPrompt = buildSystemPrompt({ depthLevel, depthLevelExtras, descriptiveMode, lang, lookCloser, recreate, artworkContext });
+  const systemPrompt = buildSystemPrompt({ depthLevel, descriptiveMode, lang, lookCloser, recreate, artworkContext });
   const model = image ? VISION_MODEL : TEXT_MODEL;
 
   const formatted = messages.map((m, i) => {

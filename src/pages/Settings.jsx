@@ -23,23 +23,12 @@ const CB_OPTIONS = [
   { id: "tritanopia", labelKey: "cbTritanopia" },
 ];
 
-const STUDENT_IDS = ["k5", "68", "912"];
-
 export default function Settings() {
   const { t, prefs, update, eyeTracking } = useApp();
   const [calibrating, setCalibrating] = useState(false);
   const [calibrated, setCalibrated] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
   const { status: eyeStatus, recenter } = eyeTracking;
-
-  // A flat grade pick here overrides the nuanced multi-group choice from
-  // the onboarding screen: it becomes the sole primary and clears the rest.
-  function chooseGrade(id) {
-    const group = id === null ? null : STUDENT_IDS.includes(id) ? "student" : id === "teacher" ? "teacher" : "adult";
-    const sel = { student: null, adult: null, teacher: null };
-    if (group) sel[group] = id;
-    update({ depthLevel: id, levelSelections: sel });
-  }
 
   return (
     <Screen>
@@ -50,7 +39,7 @@ export default function Settings() {
         <Field label={t("settingsGrade")}>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             {GRADE_OPTIONS.map((g) => (
-              <Chip key={String(g.id)} active={prefs.depthLevel === g.id} onClick={() => chooseGrade(g.id)}>
+              <Chip key={String(g.id)} active={prefs.depthLevel === g.id} onClick={() => update({ depthLevel: g.id })}>
                 {t(g.labelKey)}
               </Chip>
             ))}

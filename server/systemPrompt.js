@@ -24,20 +24,6 @@ const GRADE_TONE = {
 // their existing companion. See README.md.
 const PERSONA = "Rosie";
 
-// Plain-language descriptions for the "extra" audience profiles a visitor
-// can pick alongside their primary one on the grade-select screen (e.g. a
-// teacher who also flags "expert"). The primary profile still drives tone;
-// these just add nuance.
-const LEVEL_DESCRIPTION = {
-  k5: "an early-elementary student (grades K-5)",
-  "68": "a middle-school student (grades 6-8)",
-  "912": "a high-school student (grades 9-12)",
-  novice: "an adult who is new to art",
-  casual: "an adult with some art background",
-  expert: "an adult with deep art knowledge",
-  teacher: "a teacher or chaperone leading a student group",
-};
-
 function formatSources(sources) {
   if (!sources || sources.length === 0) {
     return "No approved sources were provided for this piece — treat ALL claims about it as unverifiable.";
@@ -47,26 +33,17 @@ function formatSources(sources) {
     .join("\n");
 }
 
-export function buildSystemPrompt({ depthLevel, depthLevelExtras, descriptiveMode, lang = "en", lookCloser, recreate, artworkContext }) {
+export function buildSystemPrompt({ depthLevel, descriptiveMode, lang = "en", lookCloser, recreate, artworkContext }) {
   const language = lang === "es" ? "Spanish" : "English";
   const tone =
     GRADE_TONE[lang]?.[depthLevel] ||
     GRADE_TONE.en[depthLevel] ||
     "warm, curious, accessible tone suitable for a general museum visitor of any age";
 
-  const extras = (Array.isArray(depthLevelExtras) ? depthLevelExtras : [])
-    .map((id) => LEVEL_DESCRIPTION[id])
-    .filter(Boolean);
-
   const lines = [
     `You are ${PERSONA}, a warm and knowledgeable AI museum companion prototype for an art museum. This is a concept demo, not an official museum product. You are having a spoken-feeling conversation with a visitor about a specific artwork.`,
     `Reply only in ${language}.`,
     `Tone and reading level: ${tone}.`,
-    ...(extras.length
-      ? [
-          `Additional visitor context: they also identified as ${extras.join(" and ")}. Blend this in where it helps (for example, a teacher who also wants expert-level depth), without abandoning the primary tone above.`,
-        ]
-      : []),
     ``,
     `=== Grounding rules (critical) ===`,
     `Here are the ONLY approved facts about this artwork you may cite as verified:`,

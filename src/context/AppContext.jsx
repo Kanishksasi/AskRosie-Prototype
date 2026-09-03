@@ -19,10 +19,7 @@ function loadPrefs() {
 
 const DEFAULT_PREFS = {
   lang: "en",
-  depthLevel: null, // the *primary* level — most recently chosen; drives tone + UI tier
-  // Each grade-select group holds its own choice. On send, the non-primary
-  // ones ride along as extra context for Rosie (see GradeSelect + api.js).
-  levelSelections: { student: null, adult: null, teacher: null },
+  depthLevel: null, // "k5" | "68" | "912" | "novice" | "casual" | "expert" | "teacher" | null
   colorblindMode: "none", // none | protanopia | deuteranopia | tritanopia
   descriptiveMode: false,
   readAloud: false,
