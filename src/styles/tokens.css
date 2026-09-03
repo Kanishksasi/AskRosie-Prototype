@@ -110,24 +110,100 @@ a {
   position: fixed;
 }
 
-/* The head-pointer's blink-click feedback (see HeadPointer.jsx). Keyframe
-   transform values win over the element's own inline transform for the
-   animation's duration, then it cleanly reverts to the inline value. */
+/* The head-pointer's blink-click feedback (see HeadPointer.jsx). The dot
+   sits inside a transl-centered wrapper, so this animation only needs to
+   scale — no transform to fight over. */
 .ar-head-pointer-blink {
   animation: ar-pointer-pulse 260ms ease-out;
 }
 @keyframes ar-pointer-pulse {
   0% {
-    transform: translate(-50%, -50%) scale(1);
+    transform: scale(1);
     background: rgba(81, 30, 17, 0.15);
   }
   40% {
-    transform: translate(-50%, -50%) scale(1.6);
+    transform: scale(1.6);
     background: rgba(81, 30, 17, 0.45);
   }
   100% {
-    transform: translate(-50%, -50%) scale(1);
+    transform: scale(1);
     background: rgba(81, 30, 17, 0.15);
+  }
+}
+
+/* Halo on whatever interactive element the pointer is currently over, so
+   the user can see what a blink-click will land on before committing. */
+.ar-head-target {
+  outline: 3px solid var(--ar-maroon) !important;
+  outline-offset: 2px !important;
+  border-radius: 4px;
+}
+
+/* "No face in frame" hint — replaces the old silent frozen pointer. */
+.ar-head-lost {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 10000;
+  background: rgba(20, 20, 20, 0.82);
+  color: #fff;
+  font-size: 13px;
+  padding: 10px 16px;
+  border-radius: 999px;
+  pointer-events: none;
+}
+
+/* Dwell-to-scroll edge affordances (see DwellScrollHint). Fixed to the
+   viewport and constrained to the phone-frame width so they line up with
+   the app on desktop too. The real scroll zones are computed from the
+   live scroll container in useDwellScroll — these are just the visible
+   "there's a zone here" cue. */
+.ar-dwell-hint {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(430px, 100vw);
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  line-height: 1;
+  color: var(--ar-maroon);
+  opacity: 0.22;
+  pointer-events: none;
+  z-index: 30;
+  transition: opacity 140ms ease;
+}
+.ar-dwell-top {
+  top: 0;
+  background: linear-gradient(to bottom, rgba(81, 30, 17, 0.13), transparent);
+}
+.ar-dwell-bottom {
+  bottom: var(--gg-navh);
+  background: linear-gradient(to top, rgba(81, 30, 17, 0.13), transparent);
+}
+.ar-dwell-active {
+  opacity: 0.9;
+}
+.ar-dwell-active span {
+  animation: ar-dwell-bob 600ms ease-in-out infinite;
+}
+@keyframes ar-dwell-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(var(--ar-dwell-bob, 3px)); }
+}
+.ar-dwell-top.ar-dwell-active {
+  --ar-dwell-bob: -3px;
+}
+
+@media (min-width: 700px) {
+  .ar-dwell-top {
+    top: 40px;
+  }
+  .ar-dwell-bottom {
+    bottom: calc(40px + var(--gg-navh));
   }
 }
 
@@ -166,4 +242,121 @@ a {
   .gg-bottomnav {
     position: absolute;
   }
+}
+
+/* --- Chat composer: voice mic + on-screen keyboard fallback --- */
+.ar-mic,
+.ar-kb-toggle {
+  flex: 0 0 auto;
+  min-width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  border: 1px solid var(--ar-line);
+  background: #fff;
+  color: var(--ar-ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+}
+.ar-mic-live {
+  border-color: var(--ar-maroon);
+  background: var(--ar-maroon);
+  color: #fff;
+  animation: ar-mic-pulse 1s ease-in-out infinite;
+}
+@keyframes ar-mic-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(81, 30, 17, 0.5); }
+  50% { box-shadow: 0 0 0 6px rgba(81, 30, 17, 0); }
+}
+.ar-kb-toggle[aria-pressed="true"] {
+  background: var(--ar-ink);
+  color: #fff;
+  border-color: var(--ar-ink);
+}
+
+.ar-osk {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+  margin-bottom: 8px;
+  background: var(--ar-mist);
+  border-radius: 14px;
+}
+.ar-osk-row {
+  display: flex;
+  gap: 6px;
+}
+.ar-osk-key {
+  flex: 1;
+  min-height: 40px;
+  border: 1px solid var(--ar-line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ar-ink);
+  font-size: 15px;
+  cursor: pointer;
+  text-transform: lowercase;
+}
+.ar-osk-key:active {
+  background: var(--ar-sage);
+}
+
+/* --- Head-control help card (see HeadControlHelp) --- */
+.ar-help-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(20, 20, 20, 0.55);
+  z-index: 120;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.ar-help-card {
+  background: #fff;
+  border-radius: 18px;
+  padding: 24px;
+  max-width: 340px;
+  width: 100%;
+}
+.ar-help-card h2 {
+  margin: 0 0 12px;
+  font-size: 17px;
+  color: var(--ar-maroon);
+}
+.ar-help-card ul {
+  margin: 0 0 18px;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #333;
+}
+
+/* Toast for the hands-free (long-blink) re-center. */
+.ar-recenter-toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(var(--gg-navh) + 20px);
+  transform: translateX(-50%);
+  background: rgba(20, 20, 20, 0.85);
+  color: #fff;
+  font-size: 12px;
+  padding: 8px 16px;
+  border-radius: 999px;
+  z-index: 10000;
+  pointer-events: none;
+  animation: ar-toast-fade 1600ms ease forwards;
+}
+@keyframes ar-toast-fade {
+  0% { opacity: 0; }
+  15% { opacity: 1; }
+  75% { opacity: 1; }
+  100% { opacity: 0; }
 }

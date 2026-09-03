@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useState, useCallback } from "react";
 import { t as translate } from "../data/strings.js";
 import { useEyeTracking } from "../hooks/useEyeTracking.js";
+import { useDwellScroll } from "../hooks/useDwellScroll.js";
 
 const AppContext = createContext(null);
 
@@ -18,7 +19,10 @@ function loadPrefs() {
 
 const DEFAULT_PREFS = {
   lang: "en",
-  depthLevel: null, // "k5" | "68" | "912" | null
+  depthLevel: null, // the *primary* level — most recently chosen; drives tone + UI tier
+  // Each grade-select group holds its own choice. On send, the non-primary
+  // ones ride along as extra context for Rosie (see GradeSelect + api.js).
+  levelSelections: { student: null, adult: null, teacher: null },
   colorblindMode: "none", // none | protanopia | deuteranopia | tritanopia
   descriptiveMode: false,
   readAloud: false,
@@ -74,10 +78,11 @@ export function AppProvider({ children }) {
   // so navigating between them re-requested the camera and re-ran the
   // whole init pipeline on every visit.
   const eyeTracking = useEyeTracking(prefs.eyeTracking);
+  const dwellScroll = useDwellScroll(eyeTracking.gaze, prefs.eyeTracking);
 
   const value = useMemo(
-    () => ({ prefs, update, t, eyeTracking }),
-    [prefs, update, t, eyeTracking]
+    () => ({ prefs, update, t, eyeTracking, dwellScroll }),
+    [prefs, update, t, eyeTracking, dwellScroll]
   );
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

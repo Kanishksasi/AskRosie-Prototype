@@ -3,6 +3,7 @@ import { AppProvider } from "./context/AppContext.jsx";
 import ColorVisionFilters from "./components/ColorVisionFilters.jsx";
 import BottomNav, { useShowBottomNav } from "./components/BottomNav.jsx";
 import HeadPointer from "./components/HeadPointer.jsx";
+import DwellScrollHint from "./components/DwellScrollHint.jsx";
 import Landing from "./pages/Landing.jsx";
 import Onboarding from "./pages/Onboarding.jsx";
 import GradeSelect from "./pages/GradeSelect.jsx";
@@ -35,6 +36,7 @@ function AppShell() {
           </Routes>
         </div>
         <BottomNav />
+        <DwellScrollHint />
         <HeadPointer />
       </div>
     </div>

@@ -5,7 +5,19 @@ import { getArtwork } from "../data/artworks.js";
 import { askRosie } from "../lib/api.js";
 import { logIfUnverified } from "../lib/reviewQueue.js";
 import { getUiTier, TIER_CONFIG } from "../lib/uiTier.js";
+import { useSpeechInput } from "../hooks/useSpeechInput.js";
 import { Screen, Header, ArtworkArt } from "../components/ui.jsx";
+import OnScreenKeyboard from "../components/OnScreenKeyboard.jsx";
+
+function MicGlyph() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+      <rect x="9" y="3" width="6" height="12" rx="3" fill="currentColor" stroke="none" />
+      <path d="M6 11a6 6 0 0 0 12 0" />
+      <line x1="12" y1="17" x2="12" y2="21" />
+    </svg>
+  );
+}
 
 const CONFIDENCE_COLOR = { high: "#2f7a45", medium: "var(--gg-olive)", low: "#a33b2b" };
 
@@ -28,11 +40,24 @@ export default function Chat() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [zoom, setZoom] = useState(null);
+  const [kbOpen, setKbOpen] = useState(false);
   const bottomRef = useRef(null);
   const startedRef = useRef(false);
   const zoomTimeoutRef = useRef(null);
 
   const { status: eyeStatus, gaze } = eyeTracking;
+
+  const speech = useSpeechInput({
+    lang: prefs.lang,
+    onFinal: (text) => setInput((v) => (v ? `${v} ${text}` : text)),
+  });
+
+  // Firefox / blocked mic → the on-screen keyboard is the only way in.
+  useEffect(() => {
+    if (!speech.supported || speech.error === "not-allowed" || speech.error === "unsupported") {
+      setKbOpen(true);
+    }
+  }, [speech.supported, speech.error]);
 
   const tier = getUiTier(prefs.depthLevel);
   const tierConfig = TIER_CONFIG[tier];
@@ -92,6 +117,9 @@ export default function Chat() {
         messages: [...history, { role: "user", content: prompt }],
         image: isCustom ? capturedImage : null,
         depthLevel: prefs.depthLevel,
+        depthLevelExtras: Object.values(prefs.levelSelections || {}).filter(
+          (v) => v && v !== prefs.depthLevel
+        ),
         descriptiveMode: prefs.descriptiveMode,
         lang: prefs.lang,
         lookCloser,
@@ -242,16 +270,49 @@ export default function Chat() {
           </button>
         </div>
 
-        <form onSubmit={handleSend} style={{ display: "flex", gap: 8, marginTop: "auto" }}>
+        {kbOpen && (
+          <OnScreenKeyboard
+            onKey={(c) => setInput((v) => v + c)}
+            onBackspace={() => setInput((v) => v.slice(0, -1))}
+            onDone={() => setKbOpen(false)}
+          />
+        )}
+
+        <form onSubmit={handleSend} style={{ display: "flex", gap: 8, marginTop: "auto", alignItems: "center" }}>
+          {speech.supported && (
+            <button
+              type="button"
+              onClick={speech.toggle}
+              aria-label={t(speech.listening ? "voiceStop" : "voiceTalk")}
+              className={`ar-mic${speech.listening ? " ar-mic-live" : ""}`}
+            >
+              <MicGlyph />
+            </button>
+          )}
+          {(prefs.eyeTracking || !speech.supported || speech.error === "not-allowed") && (
+            <button
+              type="button"
+              onClick={() => setKbOpen((o) => !o)}
+              aria-label={t("kbToggle")}
+              className="ar-kb-toggle"
+              aria-pressed={kbOpen}
+            >
+              abc
+            </button>
+          )}
           <input
-            value={input}
+            value={speech.listening && speech.interim ? `${input ? `${input} ` : ""}${speech.interim}` : input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder={t("chatPlaceholder")}
+            onClick={() => {
+              if (prefs.eyeTracking && speech.supported && !speech.listening) speech.start();
+            }}
+            inputMode={prefs.eyeTracking && !kbOpen ? "none" : undefined}
+            placeholder={speech.listening ? t("voiceListening") : t("chatPlaceholder")}
             style={{
               flex: 1,
               padding: "12px 16px",
               borderRadius: 999,
-              border: "1px solid var(--ar-line)",
+              border: `1px solid ${speech.listening ? "var(--ar-maroon)" : "var(--ar-line)"}`,
               fontSize: tierConfig.inputFontSize,
             }}
           />
@@ -271,6 +332,12 @@ export default function Chat() {
             {t("send")}
           </button>
         </form>
+        {speech.error === "not-allowed" && (
+          <div style={{ fontSize: 11, color: "var(--ar-danger)", marginTop: 6 }}>{t("voiceDenied")}</div>
+        )}
+        {!speech.supported && (
+          <div style={{ fontSize: 11, color: "#888", marginTop: 6 }}>{t("voiceUnsupported")}</div>
+        )}
       </div>
     </Screen>
   );
